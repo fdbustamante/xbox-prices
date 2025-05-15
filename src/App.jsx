@@ -17,6 +17,9 @@ function App() {
 
     // Estado para el botón Volver Arriba
     const [showBackToTop, setShowBackToTop] = useState(false);
+    
+    // Estado para la fecha de actualización
+    const [fechaActualizacion, setFechaActualizacion] = useState(null);
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,7 +37,16 @@ function App() {
                 return response.json();
             })
             .then(data => {
-                const gamesWithId = data.map((game, index) => ({
+                // Verificar la estructura de los datos (compatibilidad con nuevos y viejos formatos)
+                const juegosData = data.juegos ? data.juegos : data;
+                const fechaCreacion = data.fecha_creacion || null;
+                
+                if (fechaCreacion) {
+                    console.log(`Datos actualizados el: ${fechaCreacion}`);
+                    setFechaActualizacion(fechaCreacion);
+                }
+                
+                const gamesWithId = juegosData.map((game, index) => ({
                     ...game,
                     id: game.link || `game-${index}`
                 }));
@@ -154,6 +166,9 @@ function App() {
     return (
         <div className="container">
             <h1>Juegos de Xbox para PC</h1>
+            {fechaActualizacion && (
+                <p className="update-info">Última actualización: {fechaActualizacion}</p>
+            )}
             <div className="controls">
                 {/* Sección de Ordenación */}
                 <div className="sort-controls">

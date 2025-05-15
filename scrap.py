@@ -1,5 +1,6 @@
 import time
 import json
+import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -282,9 +283,16 @@ if __name__ == "__main__":
             print(f"... y {len(juegos) - 20} más.")
 
         try:
+            # Crear un objeto con la fecha actual y los juegos
+            fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            datos_completos = {
+                "fecha_creacion": fecha_actual,
+                "juegos": juegos
+            }
+            
             with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
-                json.dump(juegos, f, ensure_ascii=False, indent=4)
-            print(f"\nDatos guardados en {OUTPUT_FILENAME}")
+                json.dump(datos_completos, f, ensure_ascii=False, indent=4)
+            print(f"\nDatos guardados en {OUTPUT_FILENAME} con fecha: {fecha_actual}")
         except Exception as e:
             print(f"Error al guardar los datos en JSON: {e}")
     else:
