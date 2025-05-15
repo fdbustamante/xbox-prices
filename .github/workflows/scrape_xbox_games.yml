@@ -3,7 +3,7 @@ name: Scrape Xbox Games and Deploy to GitHub Pages
 on:
   schedule:
     # Ejecutar todos los días a las 03:00 UTC (ajusta la hora)
-    - cron: '0 3 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch: # Permite ejecutarlo manualmente
 
 permissions: # Añade esto
