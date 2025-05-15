@@ -1,0 +1,326 @@
+/* src/style.css */
+:root {
+    --steam-dark-blue: #1b2838;
+    --steam-medium-blue: #2a475e;
+    --steam-light-blue: #66c0f4;
+    --steam-grey: #c7d5e0;
+    --steam-dark-grey: #3a3f44;
+    --steam-green-accent: #a4d007; /* Un verde para descuentos si se quiere */
+    --discount-high: #d9534f; /* Rojo para descuentos altos */
+    --discount-medium: #f0ad4e; /* Naranja/Amarillo para descuentos medios */
+    --discount-low: #5cb85c;   /* Verde para descuentos bajos */
+}
+
+body {
+    font-family: 'Motiva Sans', Arial, sans-serif; /* Fuente similar a Steam, con fallback */
+    margin: 0;
+    background-color: var(--steam-dark-blue);
+    color: var(--steam-grey);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1300px;
+    margin: 20px auto; /* Añadir margen superior/inferior */
+    padding: 20px;
+    background-color: var(--steam-medium-blue); /* Fondo del contenedor principal */
+    border-radius: 4px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+    text-align: center;
+    color: var(--steam-light-blue);
+    margin-bottom: 25px;
+    font-size: 2.5em;
+    font-weight: 300; /* Más ligero, como en Steam */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ... (Estilos anteriores de :root, body, container, h1) ... */
+
+.controls {
+    display: grid; /* Cambiamos a grid para mejor control del layout */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Columnas responsivas para grupos de controles */
+    gap: 20px; /* Espacio entre grupos de controles */
+    align-items: center; /* Alinear items verticalmente en cada celda del grid */
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid var(--steam-dark-grey);
+}
+
+/* Estilos para cada grupo de control individual */
+.sort-controls, 
+.filter-title-control, 
+.filter-controls, /* Este ya existía, puede necesitar ajustes */
+.filter-discount-control,
+.clear-filters-wrapper {
+    display: flex;
+    flex-direction: column; /* Apilar etiqueta e input */
+    gap: 8px; /* Espacio entre etiqueta e input */
+}
+
+.filter-controls { /* Para el filtro de precio que tiene múltiples inputs */
+    flex-direction: row; /* Volver a ponerlos en fila */
+    flex-wrap: wrap; /* Permitir que se envuelvan si no caben */
+    align-items: center; /* Alinear items en la fila */
+    gap: 10px; /* Espacio entre label/input de min y label/input de max */
+}
+.filter-controls > label, .filter-controls > input { /* Para que cada par label/input se trate como una unidad */
+    margin-right: 5px;
+}
+
+
+.controls label {
+    color: var(--steam-grey);
+    font-size: 0.9em;
+    margin-bottom: 0; /* Quitar margen si está en column */
+}
+
+.controls input[type="text"],
+.controls input[type="number"],
+.controls select {
+    background-color: var(--steam-dark-grey);
+    color: var(--steam-grey);
+    border: 1px solid #000;
+    border-radius: 3px;
+    padding: 8px 10px;
+    font-size: 0.9em;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%; /* Hacer que los inputs ocupen el ancho de su contenedor de control */
+    box-sizing: border-box;
+}
+
+.controls input[type="number"] {
+    width: auto; /* Permitir que los inputs de número se ajusten a su contenido o placeholder */
+    min-width: 70px; /* Un mínimo para que no sean demasiado pequeños */
+}
+
+.controls input[type="range"] {
+    width: 100%; /* El slider ocupará todo el ancho disponible */
+    margin-top: 5px; /* Pequeño espacio arriba del slider */
+    cursor: pointer;
+}
+/* Estilos para el track y thumb del slider (puedes personalizarlos más) */
+ .controls input[type=range]::-webkit-slider-thumb {
+     -webkit-appearance: none;
+     appearance: none;
+     width: 18px;
+     height: 18px;
+     background: var(--steam-light-blue);
+     border-radius: 50%;
+     cursor: pointer;
+     margin-top: -6px; /* Ajustar posición vertical del thumb */
+ }
+ .controls input[type=range]::-moz-range-thumb {
+     width: 18px;
+     height: 18px;
+     background: var(--steam-light-blue);
+     border-radius: 50%;
+     cursor: pointer;
+     border: none;
+ }
+ .controls input[type=range]::-webkit-slider-runnable-track {
+     width: 100%;
+     height: 6px;
+     cursor: pointer;
+     background: var(--steam-dark-grey);
+     border-radius: 3px;
+     border: 1px solid #000;
+ }
+ .controls input[type=range]::-moz-range-track {
+     width: 100%;
+     height: 6px;
+     cursor: pointer;
+     background: var(--steam-dark-grey);
+     border-radius: 3px;
+     border: 1px solid #000;
+ }
+
+
+.controls input:focus, .controls select:focus {
+    border-color: var(--steam-light-blue);
+}
+
+.controls button {
+    /* ... (estilos de botón anteriores) ... */
+    padding: 10px 15px; /* Un poco más de padding para el botón de limpiar */
+}
+.clear-filters-wrapper {
+    justify-self: end; /* Alinear el botón de limpiar a la derecha si hay espacio en el grid */
+    align-self: end; /* Alinearlo abajo si es la última fila del grid */
+}
+.clear-filters-wrapper button {
+    width: auto; /* Que el botón se ajuste a su contenido */
+}
+
+
+/* ... (Resto de tus estilos para game-grid, game-card, etc. permanecen igual) ... */
+
+
+#game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); /* Tarjetas un poco más anchas */
+    gap: 25px;
+    padding: 0;
+    list-style-type: none;
+}
+
+.game-card {
+    background-color: var(--steam-medium-blue); /* Ligeramente más claro que el fondo del body */
+    border: 1px solid var(--steam-dark-grey);
+    border-radius: 3px; /* Bordes menos redondeados */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    overflow: hidden;
+    position: relative; /* Para el overlay o efectos de hover */
+}
+.game-card:hover {
+    transform: scale(1.03); /* Un poco más de zoom */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+
+.game-card img {
+    width: 100%;
+    height: 130px; /* Altura más común para thumbnails tipo Steam */
+    object-fit: cover;
+    display: block; /* Para remover espacio extra abajo */
+}
+.game-card .game-image-placeholder {
+    width: 100%;
+    height: 130px;
+    background-color: var(--steam-dark-grey);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6a7580;
+    font-size: 0.9em;
+}
+
+.game-card-content { /* Nuevo div para el contenido debajo de la imagen */
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Para que ocupe el espacio restante */
+}
+
+.game-card .game-title {
+    font-size: 1.1em; /* Un poco más grande */
+    font-weight: 400; /* Normal, no bold */
+    color: var(--steam-grey); /* Texto más claro */
+    margin-bottom: auto; /* Empuja los precios hacia abajo */
+    min-height: 40px; /* Para alinear tarjetas con títulos de 1 o 2 líneas */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limitar a 2 líneas */
+    -webkit-box-orient: vertical;
+}
+
+.game-card .game-prices {
+    margin-top: 10px; /* Espacio arriba de los precios */
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Alinear precios a la derecha */
+}
+.game-card .game-price-line {
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: flex-end; /* Alinear a la derecha dentro de la línea */
+    align-items: center;
+    width: 100%; /* Para que el flex-end funcione bien */
+}
+
+.game-card .game-discount-percentage {
+    color: white;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-right: 8px; /* Ponerlo antes del precio viejo */
+    order: -1; /* Para que aparezca primero en la línea de precios si se agrupan */
+}
+.game-discount-percentage.discount-high { background-color: var(--discount-high); }
+.game-discount-percentage.discount-medium { background-color: var(--discount-medium); }
+.game-discount-percentage.discount-low { background-color: var(--discount-low); }
+
+.game-card .game-price-old {
+    text-decoration: line-through;
+    color: #7c8b98; /* Un gris más apagado */
+    font-size: 0.85em;
+    margin-right: 8px;
+}
+
+.game-card .game-price-current {
+    color: var(--steam-light-blue); /* Azul claro para el precio actual */
+    font-weight: normal; /* No tan bold */
+    font-size: 1.1em;
+}
+.game-card .game-price-text { /* Para "Gratis" o "Game Pass" */
+    color: var(--steam-green-accent); /* Verde para destacar "Gratis" */
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+
+.game-card .game-link { /* Ocultar el botón por defecto, mostrar al hacer hover en la tarjeta */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.7);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+.game-card:hover .game-link {
+    opacity: 1;
+    transform: translateY(0);
+}
+.game-card .game-link a {
+    color: var(--steam-light-blue);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9em;
+    display: block;
+}
+.game-card .game-link a:hover {
+    color: white;
+}
+
+#no-games-message {
+    grid-column: 1 / -1; /* Para que ocupe todo el ancho de la cuadrícula */
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 1.2em;
+    color: var(--steam-grey);
+}
+
+/* Fuente similar a la de Steam (si el usuario no la tiene, usa Arial) */
+@font-face {
+    font-family: 'Motiva Sans';
+    src: local('Motiva Sans'), /* Intenta local primero */
+         url('https://store.akamai.steamstatic.com/public/css/fonts/motiva_sans_regular.ttf?v=3.0') format('truetype'); /* Fallback a una URL (esto podría no funcionar por CORS si se carga directamente) */
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'Motiva Sans';
+    src: local('Motiva Sans Bold'),
+         url('https://store.akamai.steamstatic.com/public/css/fonts/motiva_sans_bold.ttf?v=3.0') format('truetype');
+    font-weight: bold;
+}
+@font-face {
+    font-family: 'Motiva Sans';
+    src: local('Motiva Sans Light'),
+         url('https://store.akamai.steamstatic.com/public/css/fonts/motiva_sans_thin.ttf?v=3.0') format('truetype'); /* thin es a menudo usado como light */
+    font-weight: 300;
+}
