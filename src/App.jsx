@@ -92,19 +92,17 @@ function App() {
             }
 
             // Filtro por Precio
-            if (typeof game.precio_num === 'number') {
+            if (typeof game.precio_num === 'number' && !isNaN(game.precio_num)) {
                 let passesMin = true;
                 let passesMax = true;
                 if (!isNaN(minPrice)) passesMin = game.precio_num >= minPrice;
                 if (!isNaN(maxPrice)) passesMax = game.precio_num <= maxPrice;
                 if (!(passesMin && passesMax)) return false;
-            } else if (game.precio_num === null) { // Juegos sin precio numérico (ej. Game Pass)
-                // No mostrar si el checkbox está marcado
+            } else {
+                // Juegos sin precio numérico (null, undefined, NaN, o cualquier otro valor no numérico)
                 if (hideNoPrice) return false;
-                // Mostrar solo si no hay filtros de precio numérico activos
+                // No mostrar si hay filtros de precio numérico activos
                 if (!isNaN(minPrice) || !isNaN(maxPrice)) return false;
-            } else { // Caso inesperado de precio_num
-                return false;
             }
             
             return true; // Pasa todos los filtros aplicables
