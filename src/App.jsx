@@ -21,7 +21,9 @@ function App() {
     useEffect(() => {
         setIsLoading(true);
         setError(null);
-        fetch('/xbox_pc_games.json')
+        const jsonUrl = `${import.meta.env.BASE_URL}xbox_pc_games.json`;
+
+        fetch(jsonUrl)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`Error al cargar el archivo JSON: ${response.statusText}`);
