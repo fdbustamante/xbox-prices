@@ -10,6 +10,7 @@ function App() {
     const [sortType, setSortType] = useState('default');
     const [filterMinPrice, setFilterMinPrice] = useState('');
     const [filterMaxPrice, setFilterMaxPrice] = useState('');
+    const [hideNoPrice, setHideNoPrice] = useState(false); // Nuevo estado para ocultar juegos sin precio
 
     // Nuevos Estados de Filtro
     const [filterDiscountPercent, setFilterDiscountPercent] = useState('0'); // String para el input range, se parseará a número
@@ -98,6 +99,8 @@ function App() {
                 if (!isNaN(maxPrice)) passesMax = game.precio_num <= maxPrice;
                 if (!(passesMin && passesMax)) return false;
             } else if (game.precio_num === null) { // Juegos sin precio numérico (ej. Game Pass)
+                // No mostrar si el checkbox está marcado
+                if (hideNoPrice) return false;
                 // Mostrar solo si no hay filtros de precio numérico activos
                 if (!isNaN(minPrice) || !isNaN(maxPrice)) return false;
             } else { // Caso inesperado de precio_num
@@ -116,7 +119,7 @@ function App() {
             });
         }
         setDisplayedGames(workingGames);
-    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle]);
+    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice]);
 
     useEffect(() => {
         applyFiltersAndSort();
@@ -158,6 +161,7 @@ function App() {
         setFilterDiscountPercent('0');
         setFilterTitle('');
         setSortType('default');
+        setHideNoPrice(false); // Resetear el filtro de ocultar juegos sin precio
     };
 
     if (isLoading) return <div className="container"><p>Cargando juegos...</p></div>;
@@ -194,22 +198,26 @@ function App() {
 
                 {/* Sección de Filtro por Precio */}
                 <div className="filter-controls">
-                    <label htmlFor="min-price">Precio Mín (ARS):</label>
-                    <input
-                        type="number"
-                        id="min-price"
-                        placeholder="0"
-                        value={filterMinPrice}
-                        onChange={(e) => setFilterMinPrice(e.target.value)}
-                    />
-                    <label htmlFor="max-price">Precio Máx (ARS):</label>
-                    <input
-                        type="number"
-                        id="max-price"
-                        placeholder="5000"
-                        value={filterMaxPrice}
-                        onChange={(e) => setFilterMaxPrice(e.target.value)}
-                    />
+                    <div className="price-input-group">
+                        <label htmlFor="min-price">Precio Mín (ARS):</label>
+                        <input
+                            type="number"
+                            id="min-price"
+                            placeholder="0"
+                            value={filterMinPrice}
+                            onChange={(e) => setFilterMinPrice(e.target.value)}
+                        />
+                    </div>
+                    <div className="price-input-group">
+                        <label htmlFor="max-price">Precio Máx (ARS):</label>
+                        <input
+                            type="number"
+                            id="max-price"
+                            placeholder="5000"
+                            value={filterMaxPrice}
+                            onChange={(e) => setFilterMaxPrice(e.target.value)}
+                        />
+                    </div>
                 </div>
                 
                 {/* Sección de Filtro por Descuento */}
@@ -226,11 +234,29 @@ function App() {
                     />
                 </div>
 
+                {/* Checkbox para ocultar juegos sin precio */}
+                <div className="filter-checkbox-control">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={hideNoPrice}
+                            onChange={(e) => setHideNoPrice(e.target.checked)}
+                        />
+                        Ocultar juegos sin precio
+                    </label>
+                </div>
+
                 {/* Botón de Limpiar Filtros */}
                 <div className="clear-filters-wrapper">
                      <button id="clear-filter-button" onClick={handleClearFilters}>Limpiar Filtros</button>
                 </div>
             </div>
+            
+            {/* Contador de juegos */}
+            <div className="games-counter">
+                Mostrando {displayedGames.length} de {allGames.length} juegos
+            </div>
+            
             <GameList games={displayedGames} />
             
             {/* Botón Volver Arriba */}
