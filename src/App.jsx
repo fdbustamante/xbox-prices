@@ -92,12 +92,18 @@ function App() {
             }
 
             // Filtro por Precio
-            if (typeof game.precio_num === 'number' && !isNaN(game.precio_num)) {
+            if (typeof game.precio_num === 'number' && !isNaN(game.precio_num) && game.precio_num > 0) {
+                // Juegos con precio (mayor que cero)
                 let passesMin = true;
                 let passesMax = true;
                 if (!isNaN(minPrice)) passesMin = game.precio_num >= minPrice;
                 if (!isNaN(maxPrice)) passesMax = game.precio_num <= maxPrice;
                 if (!(passesMin && passesMax)) return false;
+            } else if (typeof game.precio_num === 'number' && !isNaN(game.precio_num) && game.precio_num === 0) {
+                // Juegos gratuitos (precio igual a cero)
+                if (hideNoPrice) return false; // Ocultar si el checkbox está marcado
+                // No mostrar si hay filtros de precio numérico activos
+                if (!isNaN(minPrice) || !isNaN(maxPrice)) return false;
             } else {
                 // Juegos sin precio numérico (null, undefined, NaN, o cualquier otro valor no numérico)
                 if (hideNoPrice) return false;
@@ -240,7 +246,7 @@ function App() {
                             checked={hideNoPrice}
                             onChange={(e) => setHideNoPrice(e.target.checked)}
                         />
-                        Ocultar juegos sin precio
+                        Ocultar juegos sin precio y gratuitos
                     </label>
                 </div>
 
