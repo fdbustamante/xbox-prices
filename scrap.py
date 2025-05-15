@@ -89,7 +89,7 @@ def scrape_xbox_games():
     consecutive_failures = 0
     max_failures = 3
     last_item_count = 0
-    MAX_GAMES_TO_LOAD = 50
+    MAX_GAMES_TO_LOAD = 4000
 
     while consecutive_failures < max_failures:
         current_items_count = len(driver.find_elements(By.CSS_SELECTOR, "div.ProductCard-module__cardWrapper___6Ls86"))
