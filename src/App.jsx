@@ -15,6 +15,9 @@ function App() {
     const [filterDiscountPercent, setFilterDiscountPercent] = useState('0'); // String para el input range, se parseará a número
     const [filterTitle, setFilterTitle] = useState('');
 
+    // Estado para el botón Volver Arriba
+    const [showBackToTop, setShowBackToTop] = useState(false);
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -107,6 +110,33 @@ function App() {
         applyFiltersAndSort();
     }, [applyFiltersAndSort]);
 
+    // Efecto para controlar la visibilidad del botón "Volver Arriba"
+    useEffect(() => {
+        const handleScroll = () => {
+            // Mostrar el botón cuando el usuario ha desplazado más de 300px
+            if (window.scrollY > 300) {
+                setShowBackToTop(true);
+            } else {
+                setShowBackToTop(false);
+            }
+        };
+
+        // Añadir el event listener para el scroll
+        window.addEventListener('scroll', handleScroll);
+        
+        // Limpiar el event listener cuando el componente se desmonte
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    // Función para volver arriba
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth' // Para un desplazamiento suave
+        });
+    };
 
     const handleSortChange = (e) => setSortType(e.target.value);
     
@@ -187,6 +217,17 @@ function App() {
                 </div>
             </div>
             <GameList games={displayedGames} />
+            
+            {/* Botón Volver Arriba */}
+            {showBackToTop && (
+                <button 
+                    className="back-to-top-button" 
+                    onClick={scrollToTop}
+                    aria-label="Volver arriba"
+                >
+                    ↑
+                </button>
+            )}
         </div>
     );
 }

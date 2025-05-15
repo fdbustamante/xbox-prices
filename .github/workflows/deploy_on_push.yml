@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages on Push
+
+on:
+  push:
+    branches:
+      - master  # O reemplaza con el nombre de tu rama principal (master, development, etc.)
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # Usa la misma versión que en tu otro flujo de trabajo
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist  # Asegúrate de que coincida con el directorio de salida de tu build
+          # Opciones adicionales (opcionales):
+          # user_name: 'GitHub Actions Bot'
+          # user_email: 'github-actions[bot]@users.noreply.github.com'
+          # cname: tu.dominio.personalizado.com
