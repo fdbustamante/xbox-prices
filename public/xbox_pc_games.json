@@ -81,15 +81,6 @@
         "precio_texto": "ARS$ 29.259,00"
     },
     {
-        "titulo": "Platform Party Bundle 02 (Xbox + PC)",
-        "link": "http://www.xbox.com/es-AR/games/store/platform-party-bundle-02-xbox-pc/9P3GN40RB01S/0010",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.62676.14542801256569393.ff102493-26c0-478c-93b3-7f3566e018aa.9aa21848-5289-490b-b102-8dc9f2693da2?q=90&w=177&h=177",
-        "precio_num": 534.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "ARS$ 534,00"
-    },
-    {
         "titulo": "Platform Party Bundle (Xbox + PC)",
         "link": "http://www.xbox.com/es-AR/games/store/platform-party-bundle-xbox-pc/9PN20DW3M0X7/0010",
         "imagen_url": "https://store-images.s-microsoft.com/image/apps.65022.14352764946836064.2f8a2dc3-c385-4e55-bbcc-7e902b2204f0.4d704453-010e-48d8-9c8a-8967e390aead?q=90&w=177&h=177",
@@ -97,6 +88,15 @@
         "precio_old_num": null,
         "precio_descuento_num": null,
         "precio_texto": "ARS$ 429,00"
+    },
+    {
+        "titulo": "Platform Party Bundle 02 (Xbox + PC)",
+        "link": "http://www.xbox.com/es-AR/games/store/platform-party-bundle-02-xbox-pc/9P3GN40RB01S/0010",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.62676.14542801256569393.ff102493-26c0-478c-93b3-7f3566e018aa.9aa21848-5289-490b-b102-8dc9f2693da2?q=90&w=177&h=177",
+        "precio_num": 534.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "ARS$ 534,00"
     },
     {
         "titulo": "DOOM: The Dark Ages Premium Edition",
@@ -252,60 +252,6 @@
         "precio_texto": "Gratis"
     },
     {
-        "titulo": "DRAGON BALL XENOVERSE 2",
-        "link": "http://www.xbox.com/es-AR/games/store/dragon-ball-xenoverse-2/BX03760D0QGN/0001",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.62319.63336639312113079.ceb7d6d9-5c03-4721-ab3f-09019902f961.7561068e-671a-45c8-8ec0-f01c0a1ad1d1?q=90&w=177&h=177",
-        "precio_num": 12799.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "ARS$ 12.799,00+"
-    },
-    {
-        "titulo": "Gang Beasts",
-        "link": "http://www.xbox.com/es-AR/games/store/gang-beasts/BPQZT43FWD49/0001",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.27333.68150164172276526.ddc374d7-ef5e-43b9-940a-bbc04440bb33.fa908ac2-c1a8-4d1b-9652-c977565a8111?q=90&w=177&h=177",
-        "precio_num": 9999.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "ARS$ 9.999,00"
-    },
-    {
-        "titulo": "Asphalt Legends Unite",
-        "link": "http://www.xbox.com/es-AR/games/store/asphalt-legends-unite/9NZQPT0MWTD0/0010",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.22843.14471421918435459.50c2f163-8ffd-4c66-984a-186281ff7346.e75b7058-a63f-44a6-baba-96ef0dfdb3a6?q=90&w=177&h=177",
-        "precio_num": 0.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "Gratis"
-    },
-    {
-        "titulo": "THE FINALS",
-        "link": "http://www.xbox.com/es-AR/games/store/the-finals/9PGD71CMDS0Z/0010",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.63377.14187080498030026.a5069356-e0aa-4c94-b3c4-928319e487aa.389fb5f1-e08b-4f1e-914b-ef9cdbe9bb38?q=90&w=177&h=177",
-        "precio_num": 0.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "Gratis"
-    },
-    {
-        "titulo": "Crime Scene Cleaner",
-        "link": "http://www.xbox.com/es-AR/games/store/crime-scene-cleaner/9NGZ1M3N98P2/0010",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.32740.13641013102004887.bf107aae-94c4-457f-a84e-5bd21f71f809.80e7a185-2d8a-425a-909f-3f55bb00bdac?q=90&w=177&h=177",
-        "precio_num": 24999.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "ARS$ 24.999,00"
-    },
-    {
-        "titulo": "PowerWash Simulator",
-        "link": "http://www.xbox.com/es-AR/games/store/powerwash-simulator/9NHDJC0NW20M/0010",
-        "imagen_url": "https://store-images.s-microsoft.com/image/apps.60360.13631853399995812.7c8d5b79-31b8-46af-9143-329dfb697258.813651fd-f64f-4d40-a513-0584c3e6d6a5?q=90&w=177&h=177",
-        "precio_num": 20299.0,
-        "precio_old_num": null,
-        "precio_descuento_num": null,
-        "precio_texto": "ARS$ 20.299,00+"
-    },
-    {
         "titulo": "Ready or Not",
         "link": "http://www.xbox.com/es-AR/games/store/ready-or-not/9NBR63PT4FZC/0010",
         "imagen_url": "https://store-images.s-microsoft.com/image/apps.9628.13578379328545234.b5c7ef0b-87c5-47ca-94c3-c6357dcaa8fa.0704535e-e9dd-4668-aec8-f4e63e78290b?q=90&w=177&h=177",
@@ -340,6 +286,15 @@
         "precio_old_num": null,
         "precio_descuento_num": null,
         "precio_texto": "ARS$ 70,00+"
+    },
+    {
+        "titulo": "DRAGON BALL XENOVERSE 2",
+        "link": "http://www.xbox.com/es-AR/games/store/dragon-ball-xenoverse-2/BX03760D0QGN/0001",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.62319.63336639312113079.ceb7d6d9-5c03-4721-ab3f-09019902f961.7561068e-671a-45c8-8ec0-f01c0a1ad1d1?q=90&w=177&h=177",
+        "precio_num": 12799.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "ARS$ 12.799,00+"
     },
     {
         "titulo": "Boxing Gym Story",
@@ -414,9 +369,27 @@
         "precio_texto": "Precio no disponible"
     },
     {
+        "titulo": "Gang Beasts",
+        "link": "http://www.xbox.com/es-AR/games/store/gang-beasts/BPQZT43FWD49/0001",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.27333.68150164172276526.ddc374d7-ef5e-43b9-940a-bbc04440bb33.fa908ac2-c1a8-4d1b-9652-c977565a8111?q=90&w=177&h=177",
+        "precio_num": 9999.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "ARS$ 9.999,00"
+    },
+    {
         "titulo": "eFootball™",
         "link": "http://www.xbox.com/es-AR/games/store/efootball/9NT1ZBBV6WH6/0010",
         "imagen_url": "https://store-images.s-microsoft.com/image/apps.7226.14422652290628995.3c58535e-f6c7-437a-9693-32f86cd1599e.c0372acb-fd2b-41b6-9d8d-ad391f0ca0b4?q=90&w=177&h=177",
+        "precio_num": 0.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "Gratis"
+    },
+    {
+        "titulo": "Asphalt Legends Unite",
+        "link": "http://www.xbox.com/es-AR/games/store/asphalt-legends-unite/9NZQPT0MWTD0/0010",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.22843.14471421918435459.50c2f163-8ffd-4c66-984a-186281ff7346.e75b7058-a63f-44a6-baba-96ef0dfdb3a6?q=90&w=177&h=177",
         "precio_num": 0.0,
         "precio_old_num": null,
         "precio_descuento_num": null,
@@ -441,6 +414,15 @@
         "precio_texto": "Precio no disponible"
     },
     {
+        "titulo": "THE FINALS",
+        "link": "http://www.xbox.com/es-AR/games/store/the-finals/9PGD71CMDS0Z/0010",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.63377.14187080498030026.a5069356-e0aa-4c94-b3c4-928319e487aa.389fb5f1-e08b-4f1e-914b-ef9cdbe9bb38?q=90&w=177&h=177",
+        "precio_num": 0.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "Gratis"
+    },
+    {
         "titulo": "DEATH STRANDING DIRECTOR'S CUT",
         "link": "http://www.xbox.com/es-AR/games/store/death-stranding-directors-cut/9NQGN8TGNT8P/0010",
         "imagen_url": "https://store-images.s-microsoft.com/image/apps.65472.13774354316070254.dbfd815f-aaf8-4e63-b069-bd514601d13b.6bc5a8c9-3865-4600-abf0-1c2e2df6d988?q=90&w=177&h=177",
@@ -448,5 +430,23 @@
         "precio_old_num": null,
         "precio_descuento_num": null,
         "precio_texto": "ARS$ 23.599,00"
+    },
+    {
+        "titulo": "Crime Scene Cleaner",
+        "link": "http://www.xbox.com/es-AR/games/store/crime-scene-cleaner/9NGZ1M3N98P2/0010",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.32740.13641013102004887.bf107aae-94c4-457f-a84e-5bd21f71f809.80e7a185-2d8a-425a-909f-3f55bb00bdac?q=90&w=177&h=177",
+        "precio_num": 24999.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "ARS$ 24.999,00"
+    },
+    {
+        "titulo": "PowerWash Simulator",
+        "link": "http://www.xbox.com/es-AR/games/store/powerwash-simulator/9NHDJC0NW20M/0010",
+        "imagen_url": "https://store-images.s-microsoft.com/image/apps.60360.13631853399995812.7c8d5b79-31b8-46af-9143-329dfb697258.813651fd-f64f-4d40-a513-0584c3e6d6a5?q=90&w=177&h=177",
+        "precio_num": 20299.0,
+        "precio_old_num": null,
+        "precio_descuento_num": null,
+        "precio_texto": "ARS$ 20.299,00+"
     }
 ]
