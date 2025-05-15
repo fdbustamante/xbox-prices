@@ -6,6 +6,10 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch: # Permite ejecutarlo manualmente
 
+permissions: # Añade esto
+  contents: write
+  pages: write
+
 jobs:
   scrape-and-deploy:
     runs-on: ubuntu-latest # Los runners de GitHub suelen tener Chrome preinstalado
