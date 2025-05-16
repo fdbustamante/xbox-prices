@@ -365,6 +365,12 @@ h1 {
     font-weight: bold;
 }
 
+.game-price-change .precio-anterior {
+    font-size: 0.95em;
+    font-style: italic;
+    opacity: 0.9;
+}
+
 .game-price-change.increased {
     background-color: rgba(255, 100, 100, 0.3);
     color: #ff6464;

@@ -75,6 +75,15 @@ function GameItem({ game }) {
                                 {(game.precio_cambio === 'increased' || game.precio_cambio === 'subió') && '↑ Subió'}
                                 {(game.precio_cambio === 'decreased' || game.precio_cambio === 'bajó') && '↓ Bajó'}
                                 {(game.precio_cambio === 'unchanged' || game.precio_cambio === 'sigue igual') && '→ Sin cambios'}
+                                
+                                {/* Mostrar precio anterior si existe */}
+                                {game.precio_anterior_num !== null && game.precio_anterior_num !== undefined && 
+                                 (game.precio_cambio === 'increased' || game.precio_cambio === 'decreased' || 
+                                  game.precio_cambio === 'subió' || game.precio_cambio === 'bajó') && (
+                                    <span className="precio-anterior">
+                                        {' '}(Antes: ARS$ {game.precio_anterior_num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                                    </span>
+                                )}
                             </span>
                         </div>
                     )}

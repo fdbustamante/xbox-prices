@@ -287,10 +287,16 @@ def scrape_xbox_games(datos_previos=None):
 
         # Comparar con datos previos si existen
         comparacion_precio = None
-        if datos_previos and title_str in datos_previos and current_price_num is not None:
+        precio_anterior_num = None
+        # No hacer comparación de precios si el título es "Título no encontrado"
+        if title_str != "Título no encontrado" and datos_previos and title_str in datos_previos and current_price_num is not None:
             juego_previo = datos_previos[title_str]
             if 'precio_num' in juego_previo and juego_previo['precio_num'] is not None:
-                comparacion_precio = comparar_precio(current_price_num, juego_previo['precio_num'])
+                precio_prev = juego_previo['precio_num']
+                comparacion_precio = comparar_precio(current_price_num, precio_prev)
+                # Guardar el precio anterior si hubo un cambio
+                if comparacion_precio == "increased" or comparacion_precio == "decreased":
+                    precio_anterior_num = precio_prev
 
         games_data.append({
             'titulo': title_str,
@@ -300,7 +306,8 @@ def scrape_xbox_games(datos_previos=None):
             'precio_old_num': old_price_num,
             'precio_descuento_num': discount_percentage_num,
             'precio_texto': price_text_display,
-            'precio_cambio': comparacion_precio  # Nueva propiedad que indica cambio en el precio
+            'precio_cambio': comparacion_precio,  # Propiedad que indica cambio en el precio
+            'precio_anterior_num': precio_anterior_num  # Nueva propiedad que guarda el precio anterior cuando hubo un cambio
         })
 
     return games_data
