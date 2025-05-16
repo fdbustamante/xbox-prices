@@ -400,6 +400,9 @@ h1 {
     opacity: 0;
     transform: translateY(100%);
     transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
 }
 .game-card:hover .game-link {
     opacity: 1;
@@ -410,7 +413,7 @@ h1 {
     text-decoration: none;
     font-weight: bold;
     font-size: 0.9em;
-    display: block;
+    margin: 0 5px;
 }
 .game-card .game-link a:hover {
     color: white;

@@ -94,6 +94,20 @@ function GameItem({ game }) {
                 <a href={game.link} target="_blank" rel="noopener noreferrer">
                     Ver en la Tienda
                 </a>
+                <a 
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(game.titulo + "+preview")}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                >
+                    YouTube
+                </a>
+                <a 
+                    href={`https://store.steampowered.com/search/?term=${encodeURIComponent(game.titulo)}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                >
+                    Steam
+                </a>
             </div>
         </li>
     );
