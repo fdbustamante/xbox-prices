@@ -66,6 +66,18 @@ function GameItem({ game }) {
                             <span className="game-price-text">{game.precio_texto}</span>
                         )}
                     </div>
+                    
+                    {/* Indicador de cambio de precio */}
+                    {game.precio_cambio && (
+                        <div className="game-price-line">
+                            <span className={`game-price-change ${game.precio_cambio === 'subió' || game.precio_cambio === 'increased' ? 'increased' : 
+                                           game.precio_cambio === 'bajó' || game.precio_cambio === 'decreased' ? 'decreased' : 'unchanged'}`}>
+                                {(game.precio_cambio === 'increased' || game.precio_cambio === 'subió') && '↑ Subió'}
+                                {(game.precio_cambio === 'decreased' || game.precio_cambio === 'bajó') && '↓ Bajó'}
+                                {(game.precio_cambio === 'unchanged' || game.precio_cambio === 'sigue igual') && '→ Sin cambios'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
             

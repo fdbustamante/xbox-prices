@@ -17,6 +17,7 @@ function App() {
     // Nuevos Estados de Filtro
     const [filterDiscountPercent, setFilterDiscountPercent] = useState('0'); // String para el input range, se parseará a número
     const [filterTitle, setFilterTitle] = useState('');
+    const [filterPriceChange, setFilterPriceChange] = useState('all'); // Nuevo estado para filtrar por cambio de precio
 
     // Estado para el botón Volver Arriba
     const [showBackToTop, setShowBackToTop] = useState(false);
@@ -92,6 +93,29 @@ function App() {
                     return false;
                 }
             }
+            
+            // Filtro por Cambio de Precio
+            if (filterPriceChange !== 'all') {
+                const precioCambioMapped = {
+                    'increased': 'subió',
+                    'decreased': 'bajó',
+                    'unchanged': 'sigue igual',
+                    'null': null
+                };
+                
+                if (filterPriceChange === 'null') {
+                    // Para filtrar juegos sin histórico (precio_cambio es null)
+                    if (game.precio_cambio !== null) {
+                        return false;
+                    }
+                } else {
+                    // Para otros filtros de cambio de precio
+                    if (!game.precio_cambio || (game.precio_cambio !== filterPriceChange && 
+                        game.precio_cambio !== precioCambioMapped[filterPriceChange])) {
+                        return false;
+                    }
+                }
+            }
 
             // Filtro por Precio
             if (typeof game.precio_num === 'number' && !isNaN(game.precio_num) && game.precio_num > 0) {
@@ -127,7 +151,7 @@ function App() {
         setDisplayedGames(workingGames);
         // Resetear el contador de elementos visibles al cambiar los filtros
         setVisibleCount(50);
-    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice]);
+    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice, filterPriceChange]);
 
     useEffect(() => {
         applyFiltersAndSort();
@@ -194,6 +218,7 @@ function App() {
         setFilterTitle('');
         setSortType('default');
         setHideNoPrice(false); // Resetear el filtro de ocultar juegos sin precio
+        setFilterPriceChange('all'); // Resetear el filtro de cambios de precio
         setVisibleCount(50); // Resetear la paginación
     };
 
@@ -265,6 +290,22 @@ function App() {
                         value={filterDiscountPercent}
                         onChange={(e) => setFilterDiscountPercent(e.target.value)}
                     />
+                </div>
+
+                {/* Filtro por Cambio de Precio */}
+                <div className="filter-price-change-control">
+                    <label htmlFor="filter-price-change">Cambio de precio:</label>
+                    <select 
+                        id="filter-price-change"
+                        value={filterPriceChange}
+                        onChange={(e) => setFilterPriceChange(e.target.value)}
+                    >
+                        <option value="all">Todos</option>
+                        <option value="increased">Precio subió</option>
+                        <option value="decreased">Precio bajó</option>
+                        <option value="unchanged">Sin cambios</option>
+                        <option value="null">Sin histórico</option>
+                    </select>
                 </div>
 
                 {/* Checkbox para ocultar juegos sin precio */}

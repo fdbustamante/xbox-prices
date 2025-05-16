@@ -1,6 +1,7 @@
 import time
 import json
 import datetime
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -35,8 +36,43 @@ def extract_discount_percentage(discount_text_str):
             return None
     return None
 
+def cargar_datos_previos(json_file_path):
+    """Carga los datos de juegos previos desde un archivo JSON si existe."""
+    if not os.path.exists(json_file_path):
+        print(f"No existe archivo previo {json_file_path}")
+        return {}
+    
+    try:
+        with open(json_file_path, 'r', encoding='utf-8') as f:
+            datos = json.load(f)
+            
+        # Crear un diccionario para buscar rápidamente por título
+        juegos_previos = {}
+        if 'juegos' in datos and isinstance(datos['juegos'], list):
+            for juego in datos['juegos']:
+                if 'titulo' in juego and 'precio_num' in juego:
+                    juegos_previos[juego['titulo']] = juego
+        
+        print(f"Datos previos cargados: {len(juegos_previos)} juegos")
+        return juegos_previos
+    except Exception as e:
+        print(f"Error al cargar datos previos: {e}")
+        return {}
 
-def scrape_xbox_games():
+def comparar_precio(precio_actual, precio_previo):
+    """Compara dos precios y determina si subió, bajó o sigue igual."""
+    if precio_actual is None or precio_previo is None:
+        return None
+    
+    if precio_actual > precio_previo:
+        return "increased"
+    elif precio_actual < precio_previo:
+        return "decreased"
+    else:
+        return "unchanged"
+
+
+def scrape_xbox_games(datos_previos=None):
     url = "https://www.xbox.com/es-AR/games/all-games/pc?PlayWith=PC&xr=shellnav"
     base_url_for_links = "https://www.xbox.com"
 
@@ -90,7 +126,7 @@ def scrape_xbox_games():
     consecutive_failures = 0
     max_failures = 3
     last_item_count = 0
-    MAX_GAMES_TO_LOAD = 4000
+    MAX_GAMES_TO_LOAD = 10
 
     while consecutive_failures < max_failures:
         current_items_count = len(driver.find_elements(By.CSS_SELECTOR, "div.ProductCard-module__cardWrapper___6Ls86"))
@@ -188,7 +224,8 @@ def scrape_xbox_games():
         if price_container:
             original_price_span = price_container.select_one('span.Price-module__originalPrice___XNCxs')
             # El precio actual puede ser el normal o el de descuento
-            current_price_span = price_container.select_one('span.ProductCard-module__price___cs1xr, span.Price-module__listedDiscountPrice___A-\+d5') 
+            # Usando r antes del string para evitar problemas de escape con \+
+            current_price_span = price_container.select_one(r'span.ProductCard-module__price___cs1xr, span.Price-module__listedDiscountPrice___A-\+d5') 
             discount_tag_span = price_container.select_one('div.ProductCard-module__discountTag___OjGFy')
 
             if original_price_span and current_price_span: # Hay descuento
@@ -248,6 +285,13 @@ def scrape_xbox_games():
             # print(f"Item {item_index+1} completamente vacío, omitiendo.")
             continue
 
+        # Comparar con datos previos si existen
+        comparacion_precio = None
+        if datos_previos and title_str in datos_previos and current_price_num is not None:
+            juego_previo = datos_previos[title_str]
+            if 'precio_num' in juego_previo and juego_previo['precio_num'] is not None:
+                comparacion_precio = comparar_precio(current_price_num, juego_previo['precio_num'])
+
         games_data.append({
             'titulo': title_str,
             'link': link_str,
@@ -255,7 +299,8 @@ def scrape_xbox_games():
             'precio_num': current_price_num,
             'precio_old_num': old_price_num,
             'precio_descuento_num': discount_percentage_num,
-            'precio_texto': price_text_display
+            'precio_texto': price_text_display,
+            'precio_cambio': comparacion_precio  # Nueva propiedad que indica cambio en el precio
         })
 
     return games_data
@@ -264,7 +309,12 @@ if __name__ == "__main__":
     OUTPUT_FILENAME = "public/xbox_pc_games.json" # Nuevo nombre para no sobreescribir
 
     print("Iniciando scraper de Xbox PC Games (v2)...")
-    juegos = scrape_xbox_games()
+    
+    # Cargar datos previos si existen
+    datos_previos = cargar_datos_previos(OUTPUT_FILENAME)
+    
+    # Ejecutar scraping con datos previos
+    juegos = scrape_xbox_games(datos_previos)
 
     if juegos:
         print(f"\n--- {len(juegos)} Juegos Encontrados ---")
@@ -277,7 +327,11 @@ if __name__ == "__main__":
                 print(f"   Precio Viejo Num: {juego['precio_old_num']}")
             if juego['precio_descuento_num'] is not None:
                 print(f"   Descuento %: {juego['precio_descuento_num']}")
-            print(f"   Precio Texto: {juego['precio_texto']}\n")
+            print(f"   Precio Texto: {juego['precio_texto']}")
+            if juego['precio_cambio'] is not None:
+                print(f"   Cambio de precio: {juego['precio_cambio']}\n")
+            else:
+                print(f"   Cambio de precio: null\n")
 
         if len(juegos) > 20:
             print(f"... y {len(juegos) - 20} más.")

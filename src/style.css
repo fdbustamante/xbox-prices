@@ -73,7 +73,9 @@ h1 {
 /* Estilos para cada grupo de control individual */
 .sort-controls, 
 .filter-title-control,
-.filter-discount-control {
+.filter-discount-control,
+.filter-price-change-control,
+.filter-checkbox-control {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -86,7 +88,9 @@ h1 {
 .sort-controls:hover, 
 .filter-title-control:hover,
 .filter-discount-control:hover,
-.filter-controls:hover {
+.filter-controls:hover,
+.filter-price-change-control:hover,
+.filter-checkbox-control:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -97,6 +101,13 @@ h1 {
     padding: 12px;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: var(--border-radius);
+}
+
+/* Estilo específico para centrar elementos en filter-checkbox-control */
+.filter-checkbox-control {
+    align-items: center;
+    text-align: center;
+    justify-content: center;
 }
 
 .filter-controls .price-input-group {
@@ -344,6 +355,34 @@ h1 {
 }
 
 
+/* Estilos para el indicador de cambio de precio */
+.game-price-change {
+    font-size: 0.8em;
+    padding: 2px 5px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-top: 3px;
+    font-weight: bold;
+}
+
+.game-price-change.increased {
+    background-color: rgba(255, 100, 100, 0.3);
+    color: #ff6464;
+    border-left: 3px solid #ff6464;
+}
+
+.game-price-change.decreased {
+    background-color: rgba(100, 255, 100, 0.3);
+    color: #64ff64;
+    border-left: 3px solid #64ff64;
+}
+
+.game-price-change.unchanged {
+    background-color: rgba(150, 150, 150, 0.3);
+    color: #b0b0b0;
+    border-left: 3px solid #b0b0b0;
+}
+
 .game-card .game-link { /* Ocultar el botón por defecto, mostrar al hacer hover en la tarjeta */
     position: absolute;
     bottom: 0;
@@ -450,4 +489,17 @@ h1 {
     background-color: rgba(0, 0, 0, 0.1);
     padding: 8px;
     border-radius: var(--border-radius);
+}
+
+/* Estilo para el filtro de cambio de precio */
+.filter-price-change-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-price-change-control select {
+    padding: 8px;
+    border-radius: var(--border-radius);
+    width: 100%;
 }
