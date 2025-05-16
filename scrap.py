@@ -2,6 +2,7 @@ import time
 import json
 import datetime
 import os
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,6 +11,30 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urljoin
+from telegram import Bot
+from telegram.error import TelegramError
+import asyncio
+
+# Intenta importar la configuración de Telegram
+try:
+    from telegram_config import BOT_TOKEN, CHAT_ID, DEBUG
+except ImportError:
+    # Si no existe el archivo, usamos valores predeterminados
+    BOT_TOKEN = None
+    CHAT_ID = None
+    DEBUG = False
+    print("ADVERTENCIA: No se encontró el archivo telegram_config.py. Las notificaciones de Telegram estarán desactivadas.")
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("xbox_prices_scraper.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 def clean_price_to_float(price_str):
     """Limpia una cadena de precio (ARS$ X.XXX,XX) y la convierte a float."""
@@ -35,6 +60,24 @@ def extract_discount_percentage(discount_text_str):
         except ValueError:
             return None
     return None
+
+async def enviar_mensaje_telegram(mensaje):
+    """Envía un mensaje a través de Telegram usando el bot configurado."""
+    if not BOT_TOKEN or not CHAT_ID:
+        logger.warning("No se puede enviar mensaje a Telegram: token o chat_id no configurados")
+        return False
+    
+    try:
+        bot = Bot(token=BOT_TOKEN)
+        await bot.send_message(chat_id=CHAT_ID, text=mensaje, parse_mode="HTML")
+        logger.info(f"Mensaje enviado a Telegram correctamente")
+        return True
+    except TelegramError as e:
+        logger.error(f"Error al enviar mensaje a Telegram: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Error inesperado al enviar mensaje a Telegram: {e}")
+        return False
 
 def cargar_datos_previos(json_file_path):
     """Carga los datos de juegos previos desde un archivo JSON si existe."""
@@ -354,7 +397,57 @@ if __name__ == "__main__":
             with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
                 json.dump(datos_completos, f, ensure_ascii=False, indent=4)
             print(f"\nDatos guardados en {OUTPUT_FILENAME} con fecha: {fecha_actual}")
+            
+            # Preparar y enviar notificación de Telegram para juegos que bajaron de precio
+            juegos_bajaron_precio = [j for j in juegos if j['precio_cambio'] == 'decreased']
+            
+            if juegos_bajaron_precio or DEBUG:
+                # Construir el mensaje para Telegram
+                mensaje = f"<b>🎮 ALERTA DE BAJADA DE PRECIOS XBOX PC</b>\n\n"
+                mensaje += f"<i>Fecha: {fecha_actual}</i>\n\n"
+                
+                if juegos_bajaron_precio:
+                    mensaje += f"<b>Encontré {len(juegos_bajaron_precio)} juegos que bajaron de precio:</b>\n\n"
+                    
+                    # Mostrar primero los juegos con mayor porcentaje de descuento o mayor diferencia absoluta
+                    top_juegos = sorted(
+                        juegos_bajaron_precio, 
+                        key=lambda j: abs((j['precio_num'] or 0) - (j['precio_anterior_num'] or 0)) if j['precio_anterior_num'] else 0,
+                        reverse=True
+                    )[:10]  # Mostrar máximo 10 juegos en la notificación
+                    
+                    for i, juego in enumerate(top_juegos, 1):
+                        titulo = juego['titulo']
+                        precio_actual = juego['precio_num']
+                        precio_anterior = juego['precio_anterior_num']
+                        link = juego['link']
+                        
+                        # Calcular el porcentaje de descuento respecto al precio anterior
+                        porcentaje = 0
+                        if precio_anterior and precio_actual:
+                            porcentaje = (1 - (precio_actual / precio_anterior)) * 100
+                        
+                        precio_actual_fmt = f"ARS$ {precio_actual:,.2f}".replace(',', '.')
+                        precio_anterior_fmt = f"ARS$ {precio_anterior:,.2f}".replace(',', '.')
+                        
+                        mensaje += f"{i}. <b>{titulo}</b>\n"
+                        mensaje += f"   ↓ Bajó de {precio_anterior_fmt} a {precio_actual_fmt} (-{porcentaje:.1f}%)\n"
+                        mensaje += f"   🔗 <a href=\"{link}\">Ver en la tienda</a>\n\n"
+                    
+                    if len(juegos_bajaron_precio) > 10:
+                        mensaje += f"<i>... y {len(juegos_bajaron_precio) - 10} juegos más con bajadas de precio.</i>\n"
+                    
+                    mensaje += f"\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>"
+                else:
+                    mensaje += "<i>No se encontraron juegos que hayan bajado de precio, este es un mensaje de prueba.</i>"
+                
+                # Enviar el mensaje a través de Telegram
+                print("\nEnviando notificación a Telegram...")
+                asyncio.run(enviar_mensaje_telegram(mensaje))
+            else:
+                print("\nNo se encontraron juegos que hayan bajado de precio. No se envía notificación.")
+                
         except Exception as e:
-            print(f"Error al guardar los datos en JSON: {e}")
+            logger.error(f"Error al guardar los datos en JSON o al enviar notificación: {e}")
     else:
-        print("No se pudieron obtener datos de los juegos o la lista está vacía.")
+        logger.warning("No se pudieron obtener datos de los juegos o la lista está vacía.")
