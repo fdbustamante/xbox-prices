@@ -430,3 +430,24 @@ h1 {
     max-width: 600px;
     margin: 0 auto;
 }
+
+/* Estilos para la paginación infinita */
+.loading-more {
+    text-align: center;
+    padding: 15px 0;
+    font-style: italic;
+    color: #66c0f4;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+}
+
+.games-counter {
+    text-align: center;
+    margin: 10px 0 20px;
+    font-size: 0.95em;
+    color: var(--steam-grey);
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    border-radius: var(--border-radius);
+}

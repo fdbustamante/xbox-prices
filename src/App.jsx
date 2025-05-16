@@ -5,6 +5,8 @@ import './style.css';
 function App() {
     const [allGames, setAllGames] = useState([]);
     const [displayedGames, setDisplayedGames] = useState([]);
+    const [visibleCount, setVisibleCount] = useState(50);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     
     // Estados de Filtro Existentes
     const [sortType, setSortType] = useState('default');
@@ -123,11 +125,37 @@ function App() {
             });
         }
         setDisplayedGames(workingGames);
+        // Resetear el contador de elementos visibles al cambiar los filtros
+        setVisibleCount(50);
     }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice]);
 
     useEffect(() => {
         applyFiltersAndSort();
     }, [applyFiltersAndSort]);
+
+    // Efecto para la carga de más elementos al hacer scroll
+    useEffect(() => {
+        const handleScroll = () => {
+            // Si ya estamos cargando más elementos o no hay más para cargar, no hacemos nada
+            if (isLoadingMore || visibleCount >= displayedGames.length) return;
+            
+            // Calcular si estamos cerca del final de la página (200px del final)
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const threshold = document.body.offsetHeight - 200;
+            
+            if (scrollPosition >= threshold) {
+                setIsLoadingMore(true);
+                // Simular una breve carga para evitar múltiples cargas rápidas
+                setTimeout(() => {
+                    setVisibleCount(prevCount => Math.min(prevCount + 50, displayedGames.length));
+                    setIsLoadingMore(false);
+                }, 300);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [displayedGames.length, isLoadingMore, visibleCount]);
 
     // Efecto para controlar la visibilidad del botón "Volver Arriba"
     useEffect(() => {
@@ -166,6 +194,7 @@ function App() {
         setFilterTitle('');
         setSortType('default');
         setHideNoPrice(false); // Resetear el filtro de ocultar juegos sin precio
+        setVisibleCount(50); // Resetear la paginación
     };
 
     if (isLoading) return <div className="container"><p>Cargando juegos...</p></div>;
@@ -258,10 +287,17 @@ function App() {
             
             {/* Contador de juegos */}
             <div className="games-counter">
-                Mostrando {displayedGames.length} de {allGames.length} juegos
+                Mostrando {Math.min(visibleCount, displayedGames.length)} de {displayedGames.length} juegos
             </div>
             
-            <GameList games={displayedGames} />
+            <GameList games={displayedGames.slice(0, visibleCount)} />
+            
+            {/* Carga de más juegos */}
+            {isLoadingMore && (
+                <div className="loading-more">
+                    Cargando más juegos...
+                </div>
+            )}
             
             {/* Botón Volver Arriba */}
             {showBackToTop && (
