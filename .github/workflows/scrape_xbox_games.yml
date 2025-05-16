@@ -32,6 +32,10 @@ jobs:
 
       - name: Run scraper
         run: python scrap.py # Reemplaza con el nombre de tu script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_DEBUG: ${{ secrets.TELEGRAM_DEBUG || 'False' }}
         # Selenium Manager debería descargar el ChromeDriver necesario aquí si no lo encuentra
 
       - name: Commit and push JSON if changed

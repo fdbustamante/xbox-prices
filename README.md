@@ -14,6 +14,7 @@ Xbox Prices Tracker es una aplicación web que muestra y permite buscar los prec
 - 📊 Ordenación por precio (ascendente/descendente)
 - 🔄 Actualización automática de datos cada 6 horas
 - 📱 Diseño responsivo adaptado a diferentes dispositivos
+- 🔔 Notificaciones a Telegram cuando hay juegos con bajadas de precio
 
 ## 🚀 Tecnologías utilizadas
 
@@ -47,6 +48,21 @@ pip install -r requirements.txt
 # Ejecutar el scraper
 python scrap.py
 ```
+
+### Configurar las notificaciones de Telegram (opcional):
+
+```bash
+# Copiar el archivo de configuración de ejemplo
+cp telegram_config.example.py telegram_config.py
+
+# Editar el archivo con tus credenciales
+# (Reemplaza BOT_TOKEN y CHAT_ID con tus valores)
+
+# Probar la configuración
+python test_telegram.py
+```
+
+Para más detalles sobre la configuración de Telegram, consulta el archivo [TELEGRAM_SETUP.md](TELEGRAM_SETUP.md).
 
 ## 🤖 Automatización
 

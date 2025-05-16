@@ -8,19 +8,40 @@ from telegram import Bot
 from telegram.error import TelegramError
 import datetime
 
-# Intenta importar la configuración de Telegram
-try:
-    from telegram_config import BOT_TOKEN, CHAT_ID, DEBUG
-except ImportError:
-    print("Error: No se encontró el archivo telegram_config.py")
-    print("Por favor, crea este archivo con las siguientes variables:")
-    print("BOT_TOKEN = 'tu_token_del_bot'")
-    print("CHAT_ID = 'tu_chat_id'")
-    print("DEBUG = False")
-    sys.exit(1)
+# Configuración de Telegram (prioriza variables de entorno por sobre configuración local)
+BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+DEBUG = os.environ.get('TELEGRAM_DEBUG', 'False').lower() == 'true'
+
+# Si no hay variables de entorno, intenta importar del archivo de configuración local
+if not BOT_TOKEN or not CHAT_ID:
+    try:
+        from telegram_config import BOT_TOKEN as CONFIG_BOT_TOKEN
+        from telegram_config import CHAT_ID as CONFIG_CHAT_ID
+        from telegram_config import DEBUG as CONFIG_DEBUG
+        
+        # Solo usa la configuración del archivo si no se establecieron variables de entorno
+        if not BOT_TOKEN:
+            BOT_TOKEN = CONFIG_BOT_TOKEN
+        if not CHAT_ID:
+            CHAT_ID = CONFIG_CHAT_ID
+        if os.environ.get('TELEGRAM_DEBUG') is None:
+            DEBUG = CONFIG_DEBUG
+            
+        print("Usando configuración de Telegram desde archivo local")
+    except ImportError:
+        print("Error: No se encontró archivo telegram_config.py ni variables de entorno.")
+        print("Por favor, crea el archivo telegram_config.py con las siguientes variables:")
+        print("BOT_TOKEN = 'tu_token_del_bot'")
+        print("CHAT_ID = 'tu_chat_id'")
+        print("DEBUG = False")
+        print("\nAlternativamente, configura variables de entorno:")
+        print("export TELEGRAM_BOT_TOKEN='tu_token_del_bot'")
+        print("export TELEGRAM_CHAT_ID='tu_chat_id'")
+        sys.exit(1)
 
 if not BOT_TOKEN or not CHAT_ID:
-    print("Error: BOT_TOKEN o CHAT_ID no configurados correctamente en telegram_config.py")
+    print("Error: BOT_TOKEN o CHAT_ID no configurados correctamente")
     sys.exit(1)
 
 async def test_telegram_notification():

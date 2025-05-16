@@ -23,13 +23,44 @@ Hay varias formas de obtenerlo:
 3. Visita la URL: `https://api.telegram.org/bot<BOT_TOKEN>/getUpdates` (reemplaza `<BOT_TOKEN>` con tu token)
 4. Busca "chat":{"id": y ese número (que empieza con -) es tu ID de grupo
 
-### 3. Configurar el archivo telegram_config.py
-1. Edita el archivo `telegram_config.py` con tu información:
+## Configuración para desarrollo local
+
+### Opción 1: Archivo telegram_config.py (recomendado para desarrollo)
+
+Edita el archivo `telegram_config.py` con tu información:
 ```python
 BOT_TOKEN = "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"  # Tu token
 CHAT_ID = "123456789"  # Tu ID personal o de grupo
 DEBUG = False  # Cambiar a True para probar sin necesidad de juegos con bajadas
 ```
+
+⚠️ **Importante:** Este archivo está listado en `.gitignore` y NO debe subirse al repositorio.
+
+### Opción 2: Variables de entorno (alternativa)
+
+También puedes establecer variables de entorno en tu sistema:
+
+```bash
+# Para Linux/Mac
+export TELEGRAM_BOT_TOKEN="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+export TELEGRAM_CHAT_ID="123456789"
+export TELEGRAM_DEBUG="False"
+
+# Para Windows (PowerShell)
+$env:TELEGRAM_BOT_TOKEN = "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+$env:TELEGRAM_CHAT_ID = "123456789"
+$env:TELEGRAM_DEBUG = "False"
+```
+
+## Configuración para entorno de producción (GitHub Actions)
+
+Para GitHub Actions, debes configurar los secretos en el repositorio:
+
+1. En GitHub, ve a tu repositorio → Settings → Secrets and variables → Actions
+2. Crea los siguientes secretos:
+   - `TELEGRAM_BOT_TOKEN`: Tu token del bot de Telegram
+   - `TELEGRAM_CHAT_ID`: Tu ID de chat o grupo
+   - `TELEGRAM_DEBUG`: "true" o "false" (opcional, por defecto es "false")
 
 ## Probar la configuración
 
