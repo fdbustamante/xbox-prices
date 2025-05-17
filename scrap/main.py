@@ -8,7 +8,10 @@ from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 
 from scrap.config import OUTPUT_FILENAME, DEBUG, logger
-from scrap.data_manager import cargar_datos_previos, guardar_datos, filtrar_juegos_por_precio, generar_mensaje_telegram
+from scrap.data_manager import (
+    cargar_datos_previos, guardar_datos, filtrar_juegos_por_precio, 
+    filtrar_juegos_nuevos, generar_mensaje_telegram, generar_mensaje_telegram_nuevos
+)
 from scrap.scraper import scrape_xbox_games
 from scrap.telegram_client import enviar_mensaje_telegram
 
@@ -48,33 +51,58 @@ async def guardar_resultados(juegos: List[Dict[str, Any]]) -> Optional[str]:
 
 async def enviar_notificaciones(juegos: List[Dict[str, Any]], fecha_actual: str) -> bool:
     """
-    Filtra los juegos que bajaron de precio y envía la notificación.
+    Filtra los juegos que bajaron de precio y juegos nuevos, y envía las notificaciones.
     
     Args:
         juegos: Lista de juegos encontrados
         fecha_actual: Fecha actual formateada
         
     Returns:
-        True si se envió la notificación correctamente, False en caso contrario
+        True si se enviaron las notificaciones correctamente, False en caso contrario
     """
     # Filtrar juegos que bajaron de precio
     juegos_bajaron_precio = filtrar_juegos_por_precio(juegos, "decreased")
     
+    # Filtrar juegos nuevos (precio_cambio = None)
+    juegos_nuevos = filtrar_juegos_nuevos(juegos)
+    
+    notificacion_exitosa = True
+    
+    # Enviar notificación de juegos con bajada de precio
     if juegos_bajaron_precio or DEBUG:
         try:
             # Construir el mensaje
             mensaje = generar_mensaje_telegram(juegos_bajaron_precio, fecha_actual, DEBUG)
             
             # Enviar notificación
-            logger.info("Enviando notificación a Telegram...")
-            await enviar_mensaje_telegram(mensaje)
-            return True
+            logger.info("Enviando notificación de bajadas de precio a Telegram...")
+            resultado = await enviar_mensaje_telegram(mensaje)
+            if not resultado:
+                notificacion_exitosa = False
         except Exception as e:
-            logger.error(f"Error al enviar notificación: {e}")
-            return False
+            logger.error(f"Error al enviar notificación de bajadas de precio: {e}")
+            notificacion_exitosa = False
     else:
         logger.info("No se encontraron juegos con bajada de precio. No se envía notificación.")
-        return True
+    
+    # Enviar notificación de juegos nuevos
+    if juegos_nuevos or DEBUG:
+        try:
+            # Construir el mensaje
+            mensaje = generar_mensaje_telegram_nuevos(juegos_nuevos, fecha_actual, DEBUG)
+            
+            # Enviar notificación
+            logger.info("Enviando notificación de juegos nuevos a Telegram...")
+            resultado = await enviar_mensaje_telegram(mensaje)
+            if not resultado:
+                notificacion_exitosa = False
+        except Exception as e:
+            logger.error(f"Error al enviar notificación de juegos nuevos: {e}")
+            notificacion_exitosa = False
+    else:
+        logger.info("No se encontraron juegos nuevos. No se envía notificación.")
+    
+    return notificacion_exitosa
 
 async def main() -> int:
     """

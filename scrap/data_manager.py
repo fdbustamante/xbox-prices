@@ -103,6 +103,18 @@ def filtrar_juegos_por_precio(juegos: List[GameDict], tipo_filtro: str = "decrea
     """
     return [j for j in juegos if j.get('precio_cambio') == tipo_filtro]
 
+def filtrar_juegos_nuevos(juegos: List[GameDict]) -> List[GameDict]:
+    """
+    Filtra la lista de juegos para obtener aquellos que son nuevos (precio_cambio = None).
+    
+    Args:
+        juegos: Lista de juegos a filtrar
+        
+    Returns:
+        Lista de juegos nuevos
+    """
+    return [j for j in juegos if j.get('precio_cambio') is None]
+
 def _formatear_precio(valor: Optional[float]) -> str:
     """Formatea un valor numérico como string de precio."""
     if valor is None:
@@ -172,5 +184,62 @@ def generar_mensaje_telegram(juegos_bajaron_precio: List[GameDict], fecha_actual
         mensaje.append("\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>")
     else:
         mensaje.append("<i>No se encontraron juegos que hayan bajado de precio, este es un mensaje de prueba.</i>")
+    
+    return "\n".join(mensaje)
+
+def generar_mensaje_telegram_nuevos(juegos_nuevos: List[GameDict], fecha_actual: str, debug: bool = False) -> str:
+    """
+    Genera el mensaje para enviar a Telegram con los juegos nuevos.
+    
+    Args:
+        juegos_nuevos: Lista de juegos nuevos en la tienda
+        fecha_actual: Fecha actual formateada como string
+        debug: Indica si está en modo debug
+        
+    Returns:
+        Mensaje formateado para enviar a Telegram
+    """
+    mensaje = [
+        "<b>🆕 JUEGOS NUEVOS EN XBOX PC</b>",
+        "",
+        f"<i>Fecha: {fecha_actual}</i>",
+        ""
+    ]
+    
+    if not juegos_nuevos and not debug:
+        mensaje.append("<i>No se encontraron juegos nuevos en esta actualización.</i>")
+        return "\n".join(mensaje)
+    
+    if juegos_nuevos:
+        mensaje.append(f"<b>Encontré {len(juegos_nuevos)} juegos nuevos en la tienda:</b>")
+        mensaje.append("")
+        
+        # Ordenar por precio (de menor a mayor)
+        def ordenar_por_precio(juego: GameDict) -> float:
+            return juego.get('precio_num') or float('inf')
+        
+        # Mostrar máximo 10 juegos en la notificación
+        top_juegos = sorted(juegos_nuevos, key=ordenar_por_precio)[:10]
+        
+        for i, juego in enumerate(top_juegos, 1):
+            titulo = juego.get('titulo', 'Sin título')
+            precio_actual = juego.get('precio_num')
+            link = juego.get('link', '#')
+            
+            precio_actual_fmt = _formatear_precio(precio_actual)
+            
+            mensaje.extend([
+                f"{i}. <b>{titulo}</b>",
+                f"   💰 Precio: {precio_actual_fmt}",
+                f"   🔗 <a href=\"{link}\">Ver en la tienda</a>",
+                ""
+            ])
+        
+        if len(juegos_nuevos) > 10:
+            mensaje.append(f"<i>... y {len(juegos_nuevos) - 10} juegos nuevos más.</i>")
+        
+        mensaje.append("\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>")
+    else:
+        mensaje.append("<i>No se encontraron juegos nuevos, este es un mensaje de prueba.</i>")
     
     return "\n".join(mensaje)
