@@ -218,7 +218,12 @@ class XboxScraper:
                 
                 # Comparar con datos previos
                 if datos_previos:
+                    logger.info(f"Comparando con datos previos... (formato: {'con clave juegos' if 'juegos' in datos_previos else 'diccionario por título'})")
                     self._comparar_con_datos_previos_bulk(games_data, datos_previos)
+                    # Ejecutar diagnóstico para ayudar a detectar problemas
+                    self._debug_comparacion_precios(games_data, datos_previos)
+                else:
+                    logger.info("No hay datos previos para comparar")
                 
                 # Mostrar información sobre juegos sin información completa
                 if self.juegos_sin_info > 0:
@@ -527,15 +532,21 @@ class XboxScraper:
             games_data: Lista de objetos GameData a comparar
             datos_previos: Diccionario con los datos previos de los juegos
         """
-        juegos_prev = datos_previos.get("juegos", [])
-        if not juegos_prev:
+        # Si el diccionario está vacío, no hay nada que comparar
+        if not datos_previos:
             logger.info("No hay datos previos para comparar precios.")
             return
             
-        logger.info(f"Comparando precios con datos previos de {len(juegos_prev)} juegos...")
-        
-        # Crear un diccionario de búsqueda para los datos previos
-        juegos_prev_dict = {juego.get("titulo", ""): juego for juego in juegos_prev}
+        # Verificar si datos_previos es el formato nuevo (diccionario de títulos) o antiguo (con clave "juegos")
+        if "juegos" in datos_previos and isinstance(datos_previos["juegos"], list):
+            # Formato antiguo: {"juegos": [{juego1}, {juego2}, ...]}
+            juegos_prev = datos_previos.get("juegos", [])
+            juegos_prev_dict = {juego.get("titulo", ""): juego for juego in juegos_prev}
+            logger.info(f"Comparando precios con datos previos (formato antiguo) de {len(juegos_prev)} juegos...")
+        else:
+            # Formato nuevo: {"titulo1": {juego1}, "titulo2": {juego2}, ...}
+            juegos_prev_dict = datos_previos
+            logger.info(f"Comparando precios con datos previos de {len(juegos_prev_dict)} juegos...")
         
         # Procesamiento en paralelo usando ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=min(10, os.cpu_count() * 2)) as executor:
@@ -566,6 +577,7 @@ class XboxScraper:
         """
         if not juego_previo:
             # Juego nuevo, no hay comparación
+            logger.debug(f"Juego '{game.titulo}' nuevo, no hay datos previos para comparar")
             return
             
         precio_anterior = juego_previo.get("precio_num")
@@ -575,6 +587,57 @@ class XboxScraper:
         if precio_anterior is not None and precio_actual is not None:
             game.precio_anterior_num = precio_anterior
             game.precio_cambio = comparar_precio(precio_actual, precio_anterior)
+            logger.debug(f"Comparando precio del juego '{game.titulo}': anterior={precio_anterior}, actual={precio_actual}, cambio={game.precio_cambio}")
+
+
+    def _debug_comparacion_precios(self, games_data: List[GameData], datos_previos: Dict[str, Any]) -> None:
+        """
+        Método de diagnóstico para depurar problemas con la comparación de precios.
+        
+        Args:
+            games_data: Lista de objetos GameData
+            datos_previos: Datos previos para comparación
+        """
+        if not datos_previos:
+            logger.debug("No hay datos previos para depurar comparación")
+            return
+            
+        # Contar coincidencias y estadísticas
+        total_juegos = len(games_data)
+        juegos_con_datos_previos = 0
+        juegos_con_cambio_precio = 0
+        
+        # Revisar si los datos previos tienen el formato correcto
+        tiene_clave_juegos = "juegos" in datos_previos and isinstance(datos_previos["juegos"], list)
+        
+        if tiene_clave_juegos:
+            formato = "antiguo (con clave 'juegos')"
+            juegos_previos_count = len(datos_previos["juegos"])
+        else:
+            formato = "nuevo (diccionario por título)"
+            juegos_previos_count = len(datos_previos)
+            
+        # Revisar coincidencias
+        for game in games_data[:10]:  # Limitamos a 10 para no llenar el log
+            titulo = game.titulo
+            encontrado = False
+            
+            if tiene_clave_juegos:
+                for juego in datos_previos["juegos"]:
+                    if juego.get("titulo") == titulo:
+                        encontrado = True
+                        break
+            else:
+                encontrado = titulo in datos_previos
+                
+            if encontrado:
+                juegos_con_datos_previos += 1
+                if game.precio_cambio:
+                    juegos_con_cambio_precio += 1
+                
+        logger.info(f"Diagnóstico de comparación: formato {formato}, {juegos_previos_count} juegos previos, "
+                    f"{juegos_con_datos_previos}/10 tienen datos previos, "
+                    f"{juegos_con_cambio_precio}/10 tienen cambio de precio detectado")
 
 
 @lru_cache(maxsize=1)
