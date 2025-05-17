@@ -548,6 +548,11 @@ class XboxScraper:
             juegos_prev_dict = datos_previos
             logger.info(f"Comparando precios con datos previos de {len(juegos_prev_dict)} juegos...")
         
+        # Filtrar primero los juegos que tienen título válido
+        juegos_con_titulo = [game for game in games_data if game.titulo != "Título no encontrado"]
+        if len(juegos_con_titulo) < len(games_data):
+            logger.info(f"Se omitieron {len(games_data) - len(juegos_con_titulo)} juegos sin título en la comparación de precios.")
+            
         # Procesamiento en paralelo usando ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=min(10, os.cpu_count() * 2)) as executor:
             # Crear mapeo de futuros para seguimiento
@@ -556,7 +561,7 @@ class XboxScraper:
                     self._comparar_juego_individual, 
                     game, 
                     juegos_prev_dict.get(game.titulo)
-                ): game for game in games_data
+                ): game for game in juegos_con_titulo
             }
             
             # Recoger resultados a medida que se completan
@@ -575,6 +580,11 @@ class XboxScraper:
             game: Objeto GameData a comparar
             juego_previo: Diccionario con los datos previos del juego, si existe
         """
+        # Verificar si el juego tiene un título válido
+        if game.titulo == "Título no encontrado":
+            logger.debug("Omitiendo comparación para juego sin título")
+            return
+            
         if not juego_previo:
             # Juego nuevo, no hay comparación
             logger.debug(f"Juego '{game.titulo}' nuevo, no hay datos previos para comparar")
@@ -606,6 +616,10 @@ class XboxScraper:
         total_juegos = len(games_data)
         juegos_con_datos_previos = 0
         juegos_con_cambio_precio = 0
+        juegos_sin_titulo = sum(1 for game in games_data if game.titulo == "Título no encontrado")
+        
+        if juegos_sin_titulo > 0:
+            logger.info(f"Diagnóstico: {juegos_sin_titulo} juegos sin título detectados (serán omitidos en la comparación)")
         
         # Revisar si los datos previos tienen el formato correcto
         tiene_clave_juegos = "juegos" in datos_previos and isinstance(datos_previos["juegos"], list)
