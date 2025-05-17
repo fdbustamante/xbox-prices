@@ -62,7 +62,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main  # Asegurar que recibimos los últimos cambios después del scraping
+          ref: master  # Asegurar que recibimos los últimos cambios después del scraping
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -75,7 +75,7 @@ jobs:
           npm run build
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: ./dist  # O ./client/dist si tu frontend está en una subcarpeta
@@ -92,7 +92,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: ./dist
