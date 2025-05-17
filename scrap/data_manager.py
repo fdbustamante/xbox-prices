@@ -99,9 +99,11 @@ def filtrar_juegos_por_precio(juegos: List[GameDict], tipo_filtro: str = "decrea
         tipo_filtro: Tipo de cambio a filtrar ("decreased", "increased", "unchanged")
         
     Returns:
-        Lista de juegos que cumplen con el filtro
+        Lista de juegos que cumplen con el filtro y tienen título y precio
     """
-    return [j for j in juegos if j.get('precio_cambio') == tipo_filtro]
+    return [j for j in juegos if j.get('precio_cambio') == tipo_filtro 
+            and j.get('titulo') and j.get('titulo') != "Título no encontrado" 
+            and j.get('precio_num') is not None]
 
 def filtrar_juegos_nuevos(juegos: List[GameDict]) -> List[GameDict]:
     """
@@ -111,9 +113,11 @@ def filtrar_juegos_nuevos(juegos: List[GameDict]) -> List[GameDict]:
         juegos: Lista de juegos a filtrar
         
     Returns:
-        Lista de juegos nuevos
+        Lista de juegos nuevos que tienen título y precio
     """
-    return [j for j in juegos if j.get('precio_cambio') is None]
+    return [j for j in juegos if j.get('precio_cambio') is None 
+            and j.get('titulo') and j.get('titulo') != "Título no encontrado" 
+            and j.get('precio_num') is not None]
 
 def _formatear_precio(valor: Optional[float]) -> str:
     """Formatea un valor numérico como string de precio."""
