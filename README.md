@@ -46,7 +46,7 @@ npm run dev
 pip install -r requirements.txt
 
 # Ejecutar el scraper
-python scrap.py
+python run_scraper.py
 ```
 
 ### Configurar las notificaciones de Telegram (opcional):
@@ -82,7 +82,8 @@ xbox-prices/
 │   ├── components/          # Componentes React
 │   └── ...                  # Archivos principales y estilos
 ├── .github/workflows/       # Configuración de GitHub Actions
-└── scrap.py                 # Script de scraping en Python
+├── run_scraper.py           # Script principal para ejecutar el scraper
+└── scrap/                   # Módulo Python con la implementación del scraper
 ```
 
 ## 🔗 Enlaces útiles

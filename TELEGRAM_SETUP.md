@@ -74,10 +74,10 @@ Si todo está bien configurado, recibirás un mensaje de prueba en tu chat o gru
 
 ## Uso normal
 
-Las notificaciones se enviarán automáticamente cada vez que se ejecute `scrap.py` y se encuentren juegos que hayan bajado de precio.
+Las notificaciones se enviarán automáticamente cada vez que se ejecute `run_scraper.py` y se encuentren juegos que hayan bajado de precio.
 
 ```bash
-python scrap.py
+python run_scraper.py
 ```
 
 El script enviará una notificación sólo si encuentra juegos con bajadas de precio, salvo que tengas activado el modo DEBUG.

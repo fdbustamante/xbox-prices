@@ -31,7 +31,7 @@ jobs:
           # si Chrome está disponible en el runner.
 
       - name: Run scraper
-        run: python scrap.py # Reemplaza con el nombre de tu script
+        run: python run_scraper.py # Script principal para ejecutar el scraper
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

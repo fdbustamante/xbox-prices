@@ -13,6 +13,11 @@ function GameItem({ game }) {
             discountColorClass = 'discount-low';
         }
     }
+    
+    // Función para limpiar el título eliminando contenido entre paréntesis
+    const cleanGameTitle = (title) => {
+        return title.replace(/\s*\([^)]*\)/g, '').trim();
+    };
 
     return (
         <li className="game-card">
@@ -95,14 +100,14 @@ function GameItem({ game }) {
                     Ver en la Tienda
                 </a>
                 <a 
-                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(game.titulo + "+preview")}`} 
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(cleanGameTitle(game.titulo) + "+review")}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                 >
                     YouTube
                 </a>
                 <a 
-                    href={`https://store.steampowered.com/search/?term=${encodeURIComponent(game.titulo)}`} 
+                    href={`https://store.steampowered.com/search/?term=${encodeURIComponent(cleanGameTitle(game.titulo))}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                 >

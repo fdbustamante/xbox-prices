@@ -58,7 +58,7 @@ Este es un mensaje de prueba para verificar la configuración de Telegram.
 Si estás viendo este mensaje, la configuración es correcta. 👍
 
 <b>Pasos siguientes:</b>
-1. Ejecuta el scraper: <code>python scrap.py</code>
+1. Ejecuta el scraper: <code>python run_scraper.py</code>
 2. Las notificaciones se enviarán cuando se detecten juegos con bajadas de precio.
 
 🌐 <a href="https://fdbustamante.github.io/xbox-prices/">Ver todos los juegos</a>"""

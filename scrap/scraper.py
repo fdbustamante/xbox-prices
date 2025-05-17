@@ -1,136 +1,30 @@
+"""
+Módulo de scraping para extraer los precios de juegos de Xbox.
+"""
 import time
-import json
-import datetime
-import os
-import logging
+import re
+from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException
 from bs4 import BeautifulSoup
-import re
-from urllib.parse import urljoin
-from telegram import Bot
-from telegram.error import TelegramError
-import asyncio
 
-# Configuración de Telegram (prioriza variables de entorno por sobre configuración local)
-BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
-DEBUG = os.environ.get('TELEGRAM_DEBUG', 'False').lower() == 'true'
-
-# Si no hay variables de entorno, intenta importar del archivo de configuración local
-if not BOT_TOKEN or not CHAT_ID:
-    try:
-        from telegram_config import BOT_TOKEN as CONFIG_BOT_TOKEN
-        from telegram_config import CHAT_ID as CONFIG_CHAT_ID
-        from telegram_config import DEBUG as CONFIG_DEBUG
-        
-        # Solo usa la configuración del archivo si no se establecieron variables de entorno
-        if not BOT_TOKEN:
-            BOT_TOKEN = CONFIG_BOT_TOKEN
-        if not CHAT_ID:
-            CHAT_ID = CONFIG_CHAT_ID
-        if os.environ.get('TELEGRAM_DEBUG') is None:
-            DEBUG = CONFIG_DEBUG
-            
-        print("Usando configuración de Telegram desde archivo local")
-    except ImportError:
-        print("ADVERTENCIA: No se encontró archivo de configuración de Telegram ni variables de entorno. Las notificaciones estarán desactivadas.")
-
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("xbox_prices_scraper.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
-def clean_price_to_float(price_str):
-    """Limpia una cadena de precio (ARS$ X.XXX,XX) y la convierte a float."""
-    if not price_str or not isinstance(price_str, str):
-        return None
-    
-    num_str = price_str.upper().replace("ARS$", "").replace("+", "").strip()
-    num_str = num_str.replace(".", "")
-    num_str = num_str.replace(",", ".")
-    try:
-        return float(num_str)
-    except ValueError:
-        return None
-
-def extract_discount_percentage(discount_text_str):
-    """Extrae el porcentaje de descuento numérico de un texto como '-20%'."""
-    if not discount_text_str or not isinstance(discount_text_str, str):
-        return None
-    match = re.search(r"(\d+)\s*%", discount_text_str)
-    if match:
-        try:
-            return float(match.group(1))
-        except ValueError:
-            return None
-    return None
-
-async def enviar_mensaje_telegram(mensaje):
-    """Envía un mensaje a través de Telegram usando el bot configurado."""
-    if not BOT_TOKEN or not CHAT_ID:
-        logger.warning("No se puede enviar mensaje a Telegram: token o chat_id no configurados")
-        return False
-    
-    try:
-        bot = Bot(token=BOT_TOKEN)
-        await bot.send_message(chat_id=CHAT_ID, text=mensaje, parse_mode="HTML")
-        logger.info(f"Mensaje enviado a Telegram correctamente")
-        return True
-    except TelegramError as e:
-        logger.error(f"Error al enviar mensaje a Telegram: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error inesperado al enviar mensaje a Telegram: {e}")
-        return False
-
-def cargar_datos_previos(json_file_path):
-    """Carga los datos de juegos previos desde un archivo JSON si existe."""
-    if not os.path.exists(json_file_path):
-        print(f"No existe archivo previo {json_file_path}")
-        return {}
-    
-    try:
-        with open(json_file_path, 'r', encoding='utf-8') as f:
-            datos = json.load(f)
-            
-        # Crear un diccionario para buscar rápidamente por título
-        juegos_previos = {}
-        if 'juegos' in datos and isinstance(datos['juegos'], list):
-            for juego in datos['juegos']:
-                if 'titulo' in juego and 'precio_num' in juego:
-                    juegos_previos[juego['titulo']] = juego
-        
-        print(f"Datos previos cargados: {len(juegos_previos)} juegos")
-        return juegos_previos
-    except Exception as e:
-        print(f"Error al cargar datos previos: {e}")
-        return {}
-
-def comparar_precio(precio_actual, precio_previo):
-    """Compara dos precios y determina si subió, bajó o sigue igual."""
-    if precio_actual is None or precio_previo is None:
-        return None
-    
-    if precio_actual > precio_previo:
-        return "increased"
-    elif precio_actual < precio_previo:
-        return "decreased"
-    else:
-        return "unchanged"
-
+from scrap.utils import clean_price_to_float, extract_discount_percentage, comparar_precio
+from scrap.config import logger
 
 def scrape_xbox_games(datos_previos=None):
-    url = "https://www.xbox.com/es-AR/games/all-games/pc?PlayWith=PC&xr=shellnav"
+    """
+    Realiza el scraping de los juegos de PC en la tienda de Xbox.
+    
+    Args:
+        datos_previos (dict): Diccionario con los datos previos para comparar precios.
+        
+    Returns:
+        list: Lista de diccionarios con la información de los juegos.
+    """
+    url = "https://www.xbox.com/es-AR/games/all-games/pc?PlayWith=PC&xr=shellnav&orderby=Title+Asc"
     base_url_for_links = "https://www.xbox.com"
 
     options = webdriver.ChromeOptions()
@@ -170,6 +64,18 @@ def scrape_xbox_games(datos_previos=None):
     try:
         WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, game_grid_container_selector)))
         print("Contenedor de la grilla de juegos encontrado.")
+        
+        # Buscar el elemento con la clase 
+        # typography-module__searchGamesTitle___RVAyR
+        try:
+            title_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".typography-module__searchGamesTitle___RVAyR"))
+            )
+            title_text = title_element.text
+            print(f"Texto del título encontrado: {title_text}")
+        except Exception as e:
+            print(f"No se pudo encontrar el elemento con clase typography-module__searchGamesTitle___RVAyR: {e}")
+        
         WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div.ProductCard-module__cardWrapper___6Ls86")))
         print("Primer item de juego visible.")
     except TimeoutException:
@@ -183,7 +89,7 @@ def scrape_xbox_games(datos_previos=None):
     consecutive_failures = 0
     max_failures = 3
     last_item_count = 0
-    MAX_GAMES_TO_LOAD = 4000
+    MAX_GAMES_TO_LOAD = 100
 
     while consecutive_failures < max_failures:
         current_items_count = len(driver.find_elements(By.CSS_SELECTOR, "div.ProductCard-module__cardWrapper___6Ls86"))
@@ -248,6 +154,7 @@ def scrape_xbox_games(datos_previos=None):
 
     soup = BeautifulSoup(page_source, 'html.parser')
     games_data = []
+    juegos_omitidos = 0  # Contador para juegos que no se pueden guardar
     game_items = soup.select("div.ProductCard-module__cardWrapper___6Ls86")
     print(f"Procesando {len(game_items)} items de juego con BeautifulSoup.")
 
@@ -258,8 +165,8 @@ def scrape_xbox_games(datos_previos=None):
         
         price_text_display = "Precio no disponible" 
         current_price_num = None 
-        old_price_num = None # Renombrado de original_price_num
-        discount_percentage_num = None # Nuevo campo para el porcentaje
+        old_price_num = None
+        discount_percentage_num = None
 
         # Título
         title_tag = item.select_one('span.ProductCard-module__title___nHGIp')
@@ -339,7 +246,7 @@ def scrape_xbox_games(datos_previos=None):
                 current_price_num = None
 
         if title_str == "Título no encontrado" and price_text_display == "Precio no disponible":
-            # print(f"Item {item_index+1} completamente vacío, omitiendo.")
+            juegos_omitidos += 1  # Incrementar contador de juegos omitidos
             continue
 
         # Comparar con datos previos si existen
@@ -363,105 +270,14 @@ def scrape_xbox_games(datos_previos=None):
             'precio_old_num': old_price_num,
             'precio_descuento_num': discount_percentage_num,
             'precio_texto': price_text_display,
-            'precio_cambio': comparacion_precio,  # Propiedad que indica cambio en el precio
-            'precio_anterior_num': precio_anterior_num  # Nueva propiedad que guarda el precio anterior cuando hubo un cambio
+            'precio_cambio': comparacion_precio,
+            'precio_anterior_num': precio_anterior_num
         })
 
+    # Mostrar estadísticas finales
+    print(f"\n--- Estadísticas finales de scraping ---")
+    print(f"Juegos encontrados y procesados correctamente: {len(games_data)}")
+    print(f"Juegos omitidos por falta de información: {juegos_omitidos}")
+    print(f"Total de elementos analizados: {len(game_items)}")
+    
     return games_data
-
-if __name__ == "__main__":
-    OUTPUT_FILENAME = "public/xbox_pc_games.json" # Nuevo nombre para no sobreescribir
-
-    print("Iniciando scraper de Xbox PC Games (v2)...")
-    
-    # Cargar datos previos si existen
-    datos_previos = cargar_datos_previos(OUTPUT_FILENAME)
-    
-    # Ejecutar scraping con datos previos
-    juegos = scrape_xbox_games(datos_previos)
-
-    if juegos:
-        print(f"\n--- {len(juegos)} Juegos Encontrados ---")
-        for i, juego in enumerate(juegos[:20]):
-            print(f"{i+1}. Título: {juego['titulo']}")
-            print(f"   Link: {juego['link']}")
-            print(f"   Imagen: {juego['imagen_url']}")
-            print(f"   Precio Num: {juego['precio_num']}")
-            if juego['precio_old_num'] is not None:
-                print(f"   Precio Viejo Num: {juego['precio_old_num']}")
-            if juego['precio_descuento_num'] is not None:
-                print(f"   Descuento %: {juego['precio_descuento_num']}")
-            print(f"   Precio Texto: {juego['precio_texto']}")
-            if juego['precio_cambio'] is not None:
-                print(f"   Cambio de precio: {juego['precio_cambio']}\n")
-            else:
-                print(f"   Cambio de precio: null\n")
-
-        if len(juegos) > 20:
-            print(f"... y {len(juegos) - 20} más.")
-
-        try:
-            # Crear un objeto con la fecha actual y los juegos
-            fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            datos_completos = {
-                "fecha_creacion": fecha_actual,
-                "juegos": juegos
-            }
-            
-            with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
-                json.dump(datos_completos, f, ensure_ascii=False, indent=4)
-            print(f"\nDatos guardados en {OUTPUT_FILENAME} con fecha: {fecha_actual}")
-            
-            # Preparar y enviar notificación de Telegram para juegos que bajaron de precio
-            juegos_bajaron_precio = [j for j in juegos if j['precio_cambio'] == 'decreased']
-            
-            if juegos_bajaron_precio or DEBUG:
-                # Construir el mensaje para Telegram
-                mensaje = f"<b>🎮 ALERTA DE BAJADA DE PRECIOS XBOX PC</b>\n\n"
-                mensaje += f"<i>Fecha: {fecha_actual}</i>\n\n"
-                
-                if juegos_bajaron_precio:
-                    mensaje += f"<b>Encontré {len(juegos_bajaron_precio)} juegos que bajaron de precio:</b>\n\n"
-                    
-                    # Mostrar primero los juegos con mayor porcentaje de descuento o mayor diferencia absoluta
-                    top_juegos = sorted(
-                        juegos_bajaron_precio, 
-                        key=lambda j: abs((j['precio_num'] or 0) - (j['precio_anterior_num'] or 0)) if j['precio_anterior_num'] else 0,
-                        reverse=True
-                    )[:10]  # Mostrar máximo 10 juegos en la notificación
-                    
-                    for i, juego in enumerate(top_juegos, 1):
-                        titulo = juego['titulo']
-                        precio_actual = juego['precio_num']
-                        precio_anterior = juego['precio_anterior_num']
-                        link = juego['link']
-                        
-                        # Calcular el porcentaje de descuento respecto al precio anterior
-                        porcentaje = 0
-                        if precio_anterior and precio_actual:
-                            porcentaje = (1 - (precio_actual / precio_anterior)) * 100
-                        
-                        precio_actual_fmt = f"ARS$ {precio_actual:,.2f}".replace(',', '.')
-                        precio_anterior_fmt = f"ARS$ {precio_anterior:,.2f}".replace(',', '.')
-                        
-                        mensaje += f"{i}. <b>{titulo}</b>\n"
-                        mensaje += f"   ↓ Bajó de {precio_anterior_fmt} a {precio_actual_fmt} (-{porcentaje:.1f}%)\n"
-                        mensaje += f"   🔗 <a href=\"{link}\">Ver en la tienda</a>\n\n"
-                    
-                    if len(juegos_bajaron_precio) > 10:
-                        mensaje += f"<i>... y {len(juegos_bajaron_precio) - 10} juegos más con bajadas de precio.</i>\n"
-                    
-                    mensaje += f"\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>"
-                else:
-                    mensaje += "<i>No se encontraron juegos que hayan bajado de precio, este es un mensaje de prueba.</i>"
-                
-                # Enviar el mensaje a través de Telegram
-                print("\nEnviando notificación a Telegram...")
-                asyncio.run(enviar_mensaje_telegram(mensaje))
-            else:
-                print("\nNo se encontraron juegos que hayan bajado de precio. No se envía notificación.")
-                
-        except Exception as e:
-            logger.error(f"Error al guardar los datos en JSON o al enviar notificación: {e}")
-    else:
-        logger.warning("No se pudieron obtener datos de los juegos o la lista está vacía.")
