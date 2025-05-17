@@ -1,8 +1,11 @@
 """
 Módulo de scraping para extraer los precios de juegos de Xbox.
 """
+import os
 import time
 import re
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from dataclasses import dataclass, field
 from functools import wraps, lru_cache
@@ -21,7 +24,7 @@ from selenium.common.exceptions import (
 from bs4 import BeautifulSoup, Tag
 
 from scrap.utils import clean_price_to_float, extract_discount_percentage, comparar_precio
-from scrap.config import logger
+from scrap.config import logger, MAX_JUEGOS, MAX_RETRY_ATTEMPTS, REQUEST_TIMEOUT
 
 # Constantes para configuración
 URL_XBOX_TIENDA = "https://www.xbox.com/es-AR/games/all-games/pc?PlayWith=PC&xr=shellnav&orderby=Title+Asc"
@@ -36,7 +39,7 @@ SELECTOR_DESCUENTO_TAG = "div.ProductCard-module__discountTag___OjGFy"
 SELECTOR_GRID_CONTAINER = "ol.SearchProductGrid-module__container___jew-i"
 XPATH_BOTON_CARGAR_MAS = "//button[.//div[contains(text(),'Cargar más')]]"
 XPATH_BOTON_COOKIES = "//button[@id='onetrust-accept-btn-handler']"
-MAX_JUEGOS_A_CARGAR = 100
+# Usar configuración centralizada de config.py
 MAX_FALLOS_CONSECUTIVOS = 3
 
 # Tipo para funciones de retry
@@ -60,13 +63,13 @@ class GameData:
         return {k: v for k, v in self.__dict__.items()}
 
 
-def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0, 
+def retry(max_attempts: int = MAX_RETRY_ATTEMPTS, delay: float = 1.0, backoff: float = 2.0, 
           exceptions: tuple = (Exception,)) -> Callable[[F], F]:
     """
     Decorador para reintentar una función en caso de excepción.
     
     Args:
-        max_attempts: Número máximo de intentos
+        max_attempts: Número máximo de intentos (por defecto usa MAX_RETRY_ATTEMPTS de config)
         delay: Tiempo de espera inicial entre intentos
         backoff: Factor multiplicativo para aumentar el tiempo de espera
         exceptions: Excepciones que activarán el reintento
@@ -127,18 +130,18 @@ def create_driver() -> Iterator[webdriver.Chrome]:
 class XboxScraper:
     """Clase para manejar el scraping de juegos de Xbox."""
     
-    def __init__(self, url: str = URL_XBOX_TIENDA, max_juegos: int = MAX_JUEGOS_A_CARGAR):
+    def __init__(self, url: str = URL_XBOX_TIENDA, max_juegos: int = MAX_JUEGOS):
         """
         Inicializa el scraper de Xbox.
         
         Args:
             url: URL de la tienda de Xbox para hacer scraping
-            max_juegos: Número máximo de juegos a cargar
+            max_juegos: Número máximo de juegos a cargar (desde config.MAX_JUEGOS)
         """
         self.url = url
         self.max_juegos = max_juegos
         
-    @retry(max_attempts=2, delay=5.0)
+    @retry(max_attempts=MAX_RETRY_ATTEMPTS, delay=5.0)
     def cargar_pagina_inicial(self, driver: webdriver.Chrome) -> bool:
         """
         Carga la página inicial y configura la navegación.
@@ -152,8 +155,8 @@ class XboxScraper:
         logger.info(f"Cargando página: {self.url}")
         driver.get(self.url)
         
-        # Esperar a que la página cargue
-        WebDriverWait(driver, 15).until(
+        # Esperar a que la página cargue utilizando REQUEST_TIMEOUT de config
+        WebDriverWait(driver, REQUEST_TIMEOUT/2).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
         )
 
@@ -167,10 +170,10 @@ class XboxScraper:
             logger.info("No se encontró el banner de cookies o ya fue aceptado.")
         except Exception as e:
             logger.warning(f"Error al aceptar cookies: {e}")
-
+            
         # Esperar a que cargue la grilla de juegos
         try:
-            WebDriverWait(driver, 30).until(
+            WebDriverWait(driver, REQUEST_TIMEOUT).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, SELECTOR_GRID_CONTAINER))
             )
             
@@ -183,9 +186,11 @@ class XboxScraper:
             
         except TimeoutException:
             logger.error("Timeout: Contenedor de grilla o primer item no encontrado.")
-            Path("xbox_page_source_error_grid.html").write_text(
-                driver.page_source, encoding="utf-8"
-            )
+            from scrap.config import HTML_DEBUG_DIR, get_formatted_datetime
+            timestamp = get_formatted_datetime("%Y%m%d_%H%M%S")
+            error_html_path = HTML_DEBUG_DIR / f"xbox_page_source_error_{timestamp}.html"
+            error_html_path.write_text(driver.page_source, encoding="utf-8")
+            logger.error(f"HTML guardado en {error_html_path}")
             return False
             
     def scrape_xbox_games(self, datos_previos: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
@@ -281,7 +286,16 @@ class XboxScraper:
         
         # Guardar el HTML para procesarlo
         page_source = driver.page_source
+        
+        # Guardar HTML con timestamp para depuración
+        from scrap.config import HTML_DEBUG_DIR, get_formatted_datetime
+        timestamp = get_formatted_datetime("%Y%m%d_%H%M%S")
+        html_path = HTML_DEBUG_DIR / f"xbox_page_source_{timestamp}.html"
+        html_path.write_text(page_source if page_source else "", encoding="utf-8")
+        
+        # También guardar una copia estándar para compatibilidad
         Path("xbox_page_source.html").write_text(page_source if page_source else "", encoding="utf-8")
+        logger.info(f"HTML guardado en {html_path}")
         
         # Procesar los datos obtenidos
         return self._procesar_datos_juegos(page_source)
@@ -289,14 +303,15 @@ class XboxScraper:
     def _encontrar_boton_cargar_mas(self, driver: webdriver.Chrome) -> Optional[webdriver.remote.webelement.WebElement]:
         """Encuentra el botón 'Cargar más' y hace scroll hacia él."""
         try:
-            load_more_button = WebDriverWait(driver, 10).until(
+            # Usar REQUEST_TIMEOUT de config para ajustar tiempos de espera
+            load_more_button = WebDriverWait(driver, REQUEST_TIMEOUT/3).until(
                 EC.presence_of_element_located((By.XPATH, XPATH_BOTON_CARGAR_MAS))
             )
             driver.execute_script(
                 "arguments[0].scrollIntoView({behavior: 'auto', block: 'center', inline: 'nearest'});", 
                 load_more_button
             )
-            return WebDriverWait(driver, 5).until(
+            return WebDriverWait(driver, REQUEST_TIMEOUT/6).until(
                 EC.element_to_be_clickable((By.XPATH, XPATH_BOTON_CARGAR_MAS))
             )
         except (TimeoutException, NoSuchElementException):
@@ -313,7 +328,8 @@ class XboxScraper:
     def _esperar_nuevos_elementos(self, driver: webdriver.Chrome, ultimo_conteo: int) -> None:
         """Espera a que se carguen nuevos elementos."""
         try:
-            WebDriverWait(driver, 15).until(
+            # Usar REQUEST_TIMEOUT del config para la espera máxima
+            WebDriverWait(driver, REQUEST_TIMEOUT / 2).until(
                 lambda d: len(d.find_elements(By.CSS_SELECTOR, SELECTOR_CARD_WRAPPER)) > ultimo_conteo
             )
             logger.info(f"Nuevos items cargados. Total ahora: {len(driver.find_elements(By.CSS_SELECTOR, SELECTOR_CARD_WRAPPER))}")
@@ -325,6 +341,7 @@ class XboxScraper:
     def _procesar_datos_juegos(self, page_source: str) -> List[GameData]:
         """
         Procesa el HTML de la página para extraer información de los juegos.
+        Utiliza ThreadPoolExecutor para procesamiento paralelo.
         
         Args:
             page_source: Código HTML de la página
@@ -334,29 +351,37 @@ class XboxScraper:
         """
         soup = BeautifulSoup(page_source, 'html.parser')
         juegos_procesados = []
-        juegos_omitidos = 0
-        game_items = soup.select(SELECTOR_CARD_WRAPPER)
-        logger.info(f"Procesando {len(game_items)} items de juego con BeautifulSoup.")
-
-        # Usar comprensión de lista con filtrado
-        juegos_validos = []
-        for item in game_items:
-            game_data = self._extraer_datos_juego(item)
+        
+        items = soup.select(SELECTOR_CARD_WRAPPER)
+        logger.info(f"Procesando {len(items)} juegos encontrados en el HTML")
+        
+        # Usar ThreadPoolExecutor para procesar en paralelo
+        with ThreadPoolExecutor(max_workers=min(10, os.cpu_count() * 2)) as executor:
+            futures = {executor.submit(self._extraer_datos_juego, item): item for item in items}
             
-            # Omitir juegos sin información suficiente
-            if game_data.titulo == "Título no encontrado" and game_data.precio_texto == "Precio no disponible":
-                juegos_omitidos += 1
-                continue
-                
-            juegos_validos.append(game_data)
-        
-        # Mostrar estadísticas finales
-        logger.info(f"\n--- Estadísticas finales de scraping ---")
-        logger.info(f"Juegos encontrados y procesados correctamente: {len(juegos_validos)}")
-        logger.info(f"Juegos omitidos por falta de información: {juegos_omitidos}")
-        logger.info(f"Total de elementos analizados: {len(game_items)}")
-        
-        return juegos_validos
+            for future in as_completed(futures):
+                try:
+                    game_data = future.result()
+                    if game_data:
+                        juegos_procesados.append(game_data)
+                except Exception as exc:
+                    item = futures[future]
+                    logger.error(f"Error procesando juego: {exc}", exc_info=True)
+                    
+        logger.info(f"Total de juegos procesados: {len(juegos_procesados)}")
+        return juegos_procesados
+
+    # Expresiones regulares compiladas para mejor rendimiento
+    PRECIO_PATTERN = re.compile(r"Precio original:\s*(ARS\$\s*[\d\.,]+);\s*en oferta por\s*(ARS\$\s*[\d\.,]+)", re.IGNORECASE)
+
+    @staticmethod
+    @lru_cache(maxsize=32)
+    def _extract_element_text(element, selector):
+        """Extrae el texto de un elemento usando un selector, con caché para mejorar rendimiento."""
+        if not element:
+            return None
+        selected = element.select_one(selector)
+        return selected.text.strip() if selected else None
 
     def _extraer_datos_juego(self, item: Tag) -> GameData:
         """
@@ -370,13 +395,13 @@ class XboxScraper:
         """
         game = GameData()
         
-        # Extraer datos básicos
-        # Título
-        title_tag = item.select_one(SELECTOR_TITULO)
-        if title_tag:
-            game.titulo = title_tag.text.strip()
+        # Extraer datos básicos de forma más eficiente
+        # Título - usar la función caché para mejorar rendimiento
+        titulo = self._extract_element_text(item, SELECTOR_TITULO)
+        if titulo:
+            game.titulo = titulo
 
-        # Enlace
+        # Enlace - extraer directamente sin crear variable intermedia innecesaria
         link_tag = item.select_one(SELECTOR_ENLACE)
         if link_tag and link_tag.get('href'):
             game.link = link_tag.get('href')
@@ -480,33 +505,73 @@ class XboxScraper:
             game.precio_texto = "Incluido con Game Pass"
     
     def _comparar_con_datos_previos_bulk(self, 
-                                        juegos_actuales: List[GameData], 
-                                        datos_previos: Dict[str, Dict[str, Any]]) -> None:
-        """Compara en bloque todos los juegos con los datos previos."""
-        for game in juegos_actuales:
-            if game.titulo in datos_previos:
-                juego_previo = datos_previos[game.titulo]
-                self._comparar_con_datos_previos(game, juego_previo)
+                                        games_data: List[GameData], 
+                                        datos_previos: Dict[str, Any]) -> None:
+        """
+        Compara los datos de múltiples juegos con los datos previos en paralelo.
+        
+        Args:
+            games_data: Lista de objetos GameData a comparar
+            datos_previos: Diccionario con los datos previos de los juegos
+        """
+        juegos_prev = datos_previos.get("juegos", [])
+        if not juegos_prev:
+            logger.info("No hay datos previos para comparar precios.")
+            return
             
-    def _comparar_con_datos_previos(self, game: GameData, juego_previo: Dict[str, Any]) -> None:
-        """Compara el precio actual con los datos previos."""
-        if 'precio_num' in juego_previo and juego_previo['precio_num'] is not None:
-            precio_prev = juego_previo['precio_num']
-            game.precio_cambio = comparar_precio(game.precio_num, precio_prev)
+        logger.info(f"Comparando precios con datos previos de {len(juegos_prev)} juegos...")
+        
+        # Crear un diccionario de búsqueda para los datos previos
+        juegos_prev_dict = {juego.get("titulo", ""): juego for juego in juegos_prev}
+        
+        # Procesamiento en paralelo usando ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(10, os.cpu_count() * 2)) as executor:
+            # Crear mapeo de futuros para seguimiento
+            futures_to_games = {
+                executor.submit(
+                    self._comparar_juego_individual, 
+                    game, 
+                    juegos_prev_dict.get(game.titulo)
+                ): game for game in games_data
+            }
             
-            # Guardar precio anterior si hubo cambio
-            if game.precio_cambio in ["increased", "decreased"]:
-                game.precio_anterior_num = precio_prev
+            # Recoger resultados a medida que se completan
+            for future in as_completed(futures_to_games):
+                try:
+                    future.result()  # El resultado se aplica directamente al objeto game
+                except Exception as exc:
+                    game = futures_to_games[future]
+                    logger.error(f"Error comparando juego '{game.titulo}': {exc}")
+                    
+    def _comparar_juego_individual(self, game: GameData, juego_previo: Optional[Dict[str, Any]]) -> None:
+        """
+        Compara un juego individual con los datos previos.
+        
+        Args:
+            game: Objeto GameData a comparar
+            juego_previo: Diccionario con los datos previos del juego, si existe
+        """
+        if not juego_previo:
+            # Juego nuevo, no hay comparación
+            return
+            
+        precio_anterior = juego_previo.get("precio_num")
+        precio_actual = game.precio_num
+        
+        # Si ambos precios son válidos, comparar
+        if precio_anterior is not None and precio_actual is not None:
+            game.precio_anterior_num = precio_anterior
+            game.precio_cambio = comparar_precio(precio_actual, precio_anterior)
 
 
 @lru_cache(maxsize=1)
-def get_scraper(url: str = URL_XBOX_TIENDA, max_juegos: int = MAX_JUEGOS_A_CARGAR) -> XboxScraper:
+def get_scraper(url: str = URL_XBOX_TIENDA, max_juegos: int = MAX_JUEGOS) -> XboxScraper:
     """
     Obtiene una instancia única del scraper (patrón Singleton con cache).
     
     Args:
         url: URL de la tienda
-        max_juegos: Número máximo de juegos a cargar
+        max_juegos: Número máximo de juegos a cargar (desde config.MAX_JUEGOS)
         
     Returns:
         Instancia de XboxScraper

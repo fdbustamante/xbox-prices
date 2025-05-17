@@ -12,9 +12,10 @@ from scrap.data_manager import cargar_datos_previos, guardar_datos, filtrar_jueg
 from scrap.scraper import scrape_xbox_games
 from scrap.telegram_client import enviar_mensaje_telegram
 
-async def ejecutar_scraping() -> Tuple[List[Dict[str, Any]], Dict[str, Dict[str, Any]]]:
+async def ejecutar_scraping() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Ejecuta el proceso de scraping y retorna los resultados.
+    Utiliza run_in_executor para ejecutar el scraping de forma asíncrona.
     
     Returns:
         Tupla con la lista de juegos encontrados y el diccionario de datos previos
@@ -22,8 +23,10 @@ async def ejecutar_scraping() -> Tuple[List[Dict[str, Any]], Dict[str, Dict[str,
     logger.info("Cargando datos previos...")
     datos_previos = cargar_datos_previos(OUTPUT_FILENAME)
     
-    logger.info("Iniciando el proceso de scraping...")
-    juegos = scrape_xbox_games(datos_previos)
+    logger.info("Iniciando el proceso de scraping de forma asíncrona...")
+    # Ejecutar el proceso intensivo en un threadpool
+    loop = asyncio.get_event_loop()
+    juegos = await loop.run_in_executor(None, lambda: scrape_xbox_games(datos_previos))
     
     return juegos, datos_previos
 

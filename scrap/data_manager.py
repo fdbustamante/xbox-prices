@@ -69,9 +69,11 @@ def guardar_datos(juegos: List[GameDict], output_filename: str) -> Optional[str]
     Returns:
         String con la fecha de creación o None si ocurrió un error
     """
-    fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    from scrap.config import get_formatted_datetime
+    fecha_actual = get_formatted_datetime()
     datos_completos = {
         "fecha_creacion": fecha_actual,
+        "total_juegos": len(juegos),
         "juegos": juegos
     }
     
