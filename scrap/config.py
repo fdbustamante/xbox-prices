@@ -15,7 +15,7 @@ LOG_FILENAME = str(BASE_DIR / "xbox_prices_scraper.log")
 HTML_DEBUG_DIR = BASE_DIR / "debug_html"
 
 # Parámetros de configuración
-MAX_JUEGOS = int(os.environ.get('MAX_JUEGOS', '100'))
+MAX_JUEGOS = int(os.environ.get('MAX_JUEGOS', '4000'))
 MAX_RETRY_ATTEMPTS = 3
 REQUEST_TIMEOUT = 30  # segundos
 
