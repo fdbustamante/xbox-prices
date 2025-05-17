@@ -6,14 +6,16 @@ on:
     - cron: '0 */1 * * *'
   workflow_dispatch: # Permite ejecutarlo manualmente
 
-permissions: # Añade esto
+permissions:
   contents: write
   pages: write
 
 jobs:
-  scrape-and-deploy:
-    runs-on: ubuntu-latest # Los runners de GitHub suelen tener Chrome preinstalado
-
+  # Job 1: Extracción de datos
+  scrape-data:
+    name: Extraer datos de juegos
+    runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,28 +23,24 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # O la versión que uses y que sea compatible con tu Selenium
+          python-version: '3.10'
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt # Instalará Selenium, BeautifulSoup4, etc.
-          # Selenium Manager (incluido en Selenium >= 4.6) debería manejar el ChromeDriver
-          # si Chrome está disponible en el runner.
+          pip install -r requirements.txt
 
       - name: Run scraper
-        run: python run_scraper.py # Script principal para ejecutar el scraper
+        run: python run_scraper.py
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_DEBUG: ${{ secrets.TELEGRAM_DEBUG || 'False' }}
-        # Selenium Manager debería descargar el ChromeDriver necesario aquí si no lo encuentra
 
       - name: Commit and push JSON if changed
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
-          # Asegúrate que la ruta al JSON sea correcta si no está en la raíz
           git add public/xbox_pc_games.json 
           if git diff --staged --quiet; then
             echo "No changes to public/xbox_pc_games.json."
@@ -54,22 +52,56 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Pasos para el despliegue del frontend a GitHub Pages
+  # Job 2: Construcción del frontend
+  build-frontend:
+    name: Construir frontend
+    needs: scrape-data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Asegurar que recibimos los últimos cambios después del scraping
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # O la versión de Node que use tu proyecto Vite
+          node-version: '18'
 
       - name: Install frontend dependencies and build
         run: |
           npm install 
           npm run build
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: ./dist  # O ./client/dist si tu frontend está en una subcarpeta
+          retention-days: 1
+
+  # Job 3: Despliegue a GitHub Pages
+  deploy-to-github-pages:
+    name: Desplegar a GitHub Pages
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: ./dist
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist # O ./client/dist si tu frontend está en una subcarpeta
+          publish_dir: ./dist
           # Opciones adicionales (opcionales):
           # user_name: 'GitHub Actions Bot'
           # user_email: 'github-actions[bot]@users.noreply.github.com'
