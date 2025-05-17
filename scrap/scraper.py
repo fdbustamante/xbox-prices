@@ -140,6 +140,7 @@ class XboxScraper:
         """
         self.url = url
         self.max_juegos = max_juegos
+        self.juegos_sin_info = 0  # Contador para juegos sin información completa
         
     @retry(max_attempts=MAX_RETRY_ATTEMPTS, delay=5.0)
     def cargar_pagina_inicial(self, driver: webdriver.Chrome) -> bool:
@@ -203,6 +204,9 @@ class XboxScraper:
         Returns:
             Lista de diccionarios con la información de los juegos
         """
+        # Reiniciar contador de juegos sin información
+        self.juegos_sin_info = 0
+        
         try:
             with create_driver() as driver:
                 if not self.cargar_pagina_inicial(driver):
@@ -215,6 +219,10 @@ class XboxScraper:
                 # Comparar con datos previos
                 if datos_previos:
                     self._comparar_con_datos_previos_bulk(games_data, datos_previos)
+                
+                # Mostrar información sobre juegos sin información completa
+                if self.juegos_sin_info > 0:
+                    logger.info(f"No se pudo obtener información completa de {self.juegos_sin_info} juegos de un total de {len(games_data)}.")
                     
                 return [game.to_dict() for game in games_data]
                 
@@ -367,8 +375,9 @@ class XboxScraper:
                 except Exception as exc:
                     item = futures[future]
                     logger.error(f"Error procesando juego: {exc}", exc_info=True)
+                    self.juegos_sin_info += 1  # Contabilizar errores como juegos sin info
                     
-        logger.info(f"Total de juegos procesados: {len(juegos_procesados)}")
+        logger.info(f"Total de juegos procesados: {len(juegos_procesados)} | Juegos sin información completa: {self.juegos_sin_info}")
         return juegos_procesados
 
     # Expresiones regulares compiladas para mejor rendimiento
@@ -414,6 +423,10 @@ class XboxScraper:
         # Extraer información de precios
         self._extraer_info_precios(item, game, link_tag)
         
+        # Verificar si el juego tiene la información completa
+        if game.precio_texto == "Precio no disponible" or game.titulo == "Título no encontrado":
+            self.juegos_sin_info += 1
+            
         return game
         
     def _extraer_info_precios(self, item: Tag, game: GameData, link_tag: Optional[Tag] = None) -> None:
