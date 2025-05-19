@@ -1,6 +1,6 @@
 import React from 'react';
 
-function GameItem({ game }) {
+function GameItem({ game, isSelected, onSelectToggle }) {
     const isValidImageUrl = game.imagen_url && game.imagen_url !== "Imagen no encontrada" && game.imagen_url.startsWith('http');
 
     let discountColorClass = '';
@@ -21,6 +21,16 @@ function GameItem({ game }) {
 
     return (
         <li className="game-card">
+            {/* Checkbox para seleccionar el juego */}
+            <div className="game-select-checkbox">
+                <input 
+                    type="checkbox" 
+                    checked={isSelected} 
+                    onChange={() => onSelectToggle(game)}
+                    aria-label={`Seleccionar ${game.titulo}`}
+                />
+            </div>
+            
             {isValidImageUrl ? (
                 <img 
                     src={game.imagen_url} 
