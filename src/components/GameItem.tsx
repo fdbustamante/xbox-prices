@@ -1,10 +1,18 @@
 import React from 'react';
+import { Game } from '../types'; // Import Game type
 
-function GameItem({ game, isSelected, onSelectToggle }) {
+interface GameItemProps {
+  game: Game;
+  isSelected: boolean;
+  onSelectToggle: (game: Game) => void;
+}
+
+const GameItem: React.FC<GameItemProps> = ({ game, isSelected, onSelectToggle }) => {
     const isValidImageUrl = game.imagen_url && game.imagen_url !== "Imagen no encontrada" && game.imagen_url.startsWith('http');
 
     let discountColorClass = '';
-    if (game.precio_descuento_num !== null && game.precio_descuento_num > 0) {
+    // Ensure precio_descuento_num is a number and greater than 0
+    if (typeof game.precio_descuento_num === 'number' && game.precio_descuento_num > 0) {
         if (game.precio_descuento_num > 50) {
             discountColorClass = 'discount-high';
         } else if (game.precio_descuento_num >= 21) {
@@ -14,14 +22,22 @@ function GameItem({ game, isSelected, onSelectToggle }) {
         }
     }
     
-    // Función para limpiar el título eliminando contenido entre paréntesis
-    const cleanGameTitle = (title) => {
+    const cleanGameTitle = (title: string): string => {
         return title.replace(/\s*\([^)]*\)/g, '').trim();
+    };
+
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        const target = e.target as HTMLImageElement; // Type assertion
+        target.style.display = 'none';
+        const parentElement = target.parentElement;
+        if (parentElement) {
+            const placeholder = parentElement.querySelector('.game-image-placeholder-active') as HTMLElement; // Type assertion
+            if (placeholder) placeholder.style.display = 'flex';
+        }
     };
 
     return (
         <li className="game-card">
-            {/* Checkbox para seleccionar el juego */}
             <div className="game-select-checkbox">
                 <input 
                     type="checkbox" 
@@ -31,15 +47,11 @@ function GameItem({ game, isSelected, onSelectToggle }) {
                 />
             </div>
             
-            {isValidImageUrl ? (
+            {isValidImageUrl && game.imagen_url ? ( // Added check for game.imagen_url to satisfy TS strict null checks potentially
                 <img 
                     src={game.imagen_url} 
                     alt={game.titulo} 
-                    onError={(e) => { 
-                        e.target.style.display = 'none';
-                        const placeholder = e.target.parentElement.querySelector('.game-image-placeholder-active');
-                        if (placeholder) placeholder.style.display = 'flex';
-                    }}
+                    onError={handleImageError}
                 />
             ) : null}
              
@@ -52,19 +64,19 @@ function GameItem({ game, isSelected, onSelectToggle }) {
                 
                 <div className="game-prices">
                     {/* Mostrar descuento primero si existe */}
-                    {game.precio_descuento_num !== null && game.precio_descuento_num > 0 && (
+                    {typeof game.precio_descuento_num === 'number' && game.precio_descuento_num > 0 && (
                         <div className="game-price-line">
                             <span className={`game-discount-percentage ${discountColorClass}`}>
-                                -{game.precio_descuento_num}%
+                                -{game.precio_descuento_num}% 
                             </span>
                         </div>
                     )}
 
                     {/* Mostrar precio viejo si existe y es diferente del actual */}
-                    {game.precio_old_num !== null && game.precio_old_num !== game.precio_num && (
+                    {typeof game.precio_old_num === 'number' && game.precio_old_num !== game.precio_num && (
                         <div className="game-price-line">
                             <span className="game-price-old">
-                                ARS$ {game.precio_old_num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} {/* Sin decimales para precio viejo */}
+                                ARS$ {game.precio_old_num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                         </div>
                     )}
@@ -92,7 +104,7 @@ function GameItem({ game, isSelected, onSelectToggle }) {
                                 {(game.precio_cambio === 'unchanged' || game.precio_cambio === 'sigue igual') && '→ Sin cambios'}
                                 
                                 {/* Mostrar precio anterior si existe */}
-                                {game.precio_anterior_num !== null && game.precio_anterior_num !== undefined && 
+                                {typeof game.precio_anterior_num === 'number' && 
                                  (game.precio_cambio === 'increased' || game.precio_cambio === 'decreased' || 
                                   game.precio_cambio === 'subió' || game.precio_cambio === 'bajó') && (
                                     <span className="precio-anterior">

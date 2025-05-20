@@ -1,19 +1,23 @@
-// src/components/GameList.jsx (solo para confirmar el id)
 import React, { useState } from 'react';
-import GameItem from './GameItem';
-import ShareModal from './ShareModal';
+import GameItem from './GameItem'; // Will resolve to GameItem.tsx
+import ShareModal from './ShareModal'; // Will resolve to ShareModal.tsx
+import { Game } from '../types'; // Import Game type
 
-function GameList({ games }) {
-    const [selectedGames, setSelectedGames] = useState([]);
-    const [showShareModal, setShowShareModal] = useState(false);
+interface GameListProps {
+  games: Game[];
+}
+
+const GameList: React.FC<GameListProps> = ({ games }) => {
+    const [selectedGames, setSelectedGames] = useState<Game[]>([]);
+    const [showShareModal, setShowShareModal] = useState<boolean>(false);
     
-    const handleSelectToggle = (game) => {
-        setSelectedGames(prev => {
-            const isAlreadySelected = prev.some(g => g.id === game.id || g.link === game.link);
+    const handleSelectToggle = (game: Game) => {
+        setSelectedGames(prevSelectedGames => {
+            const isAlreadySelected = prevSelectedGames.some(g => g.id === game.id || g.link === game.link);
             if (isAlreadySelected) {
-                return prev.filter(g => g.id !== game.id && g.link !== game.link);
+                return prevSelectedGames.filter(g => g.id !== game.id && g.link !== game.link);
             } else {
-                return [...prev, game];
+                return [...prevSelectedGames, game];
             }
         });
     };
@@ -24,10 +28,10 @@ function GameList({ games }) {
 
     return (
         <div className="games-container">
-            <ul id="game-grid"> {/* Asegúrate de que el id esté aquí */}
-                {games.map((game) => (
+            <ul id="game-grid">
+                {games.map((game: Game) => (
                     <GameItem 
-                        key={game.id || game.link || game.titulo} 
+                        key={game.id || game.link || game.titulo} // game.id should be primary if always present
                         game={game} 
                         isSelected={selectedGames.some(g => g.id === game.id || g.link === game.link)}
                         onSelectToggle={handleSelectToggle}
@@ -35,7 +39,6 @@ function GameList({ games }) {
                 ))}
             </ul>
             
-            {/* Botón flotante de compartir */}
             {selectedGames.length > 0 && (
                 <div className="floating-buttons">
                     <button 
@@ -48,7 +51,6 @@ function GameList({ games }) {
                 </div>
             )}
             
-            {/* Modal de Compartir */}
             {showShareModal && (
                 <ShareModal 
                     selectedGames={selectedGames} 
