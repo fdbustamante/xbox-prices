@@ -69,10 +69,14 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies and build
-        run: |
-          npm install 
-          npm run build
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build project
+        run: npm run build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

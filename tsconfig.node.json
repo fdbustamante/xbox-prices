@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler", // Or "Node" if "bundler" causes issues
+    "allowSyntheticDefaultImports": true,
+    "noEmit": false // Allow emit for composite project
+  },
+  "include": ["vite.config.js", "vitest.config.ts"] // Added vitest.config.ts
+}
