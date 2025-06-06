@@ -85,6 +85,19 @@ async def enviar_notificaciones(juegos: List[Dict[str, Any]], fecha_actual: str)
     else:
         logger.info("No se encontraron juegos con bajada de precio. No se envía notificación.")
     
+    # Enviar notificación de top descuentos
+    if juegos_bajaron_precio or DEBUG:
+        try:
+            from scrap.data_manager import generar_mensaje_telegram_top_descuentos
+            mensaje = generar_mensaje_telegram_top_descuentos(juegos_bajaron_precio, fecha_actual, DEBUG)
+            logger.info("Enviando notificación de top descuentos a Telegram...")
+            resultado = await enviar_mensaje_telegram(mensaje)
+            if not resultado:
+                notificacion_exitosa = False
+        except Exception as e:
+            logger.error(f"Error al enviar notificación de top descuentos: {e}")
+            notificacion_exitosa = False
+    
     # Enviar notificación de juegos nuevos
     if juegos_nuevos or DEBUG:
         try:

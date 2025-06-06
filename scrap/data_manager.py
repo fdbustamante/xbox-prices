@@ -247,3 +247,51 @@ def generar_mensaje_telegram_nuevos(juegos_nuevos: List[GameDict], fecha_actual:
         mensaje.append("<i>No se encontraron juegos nuevos, este es un mensaje de prueba.</i>")
     
     return "\n".join(mensaje)
+
+def generar_mensaje_telegram_top_descuentos(juegos_bajaron_precio: List[GameDict], fecha_actual: str, debug: bool = False) -> str:
+    """
+    Genera el mensaje para enviar a Telegram con el top de juegos con mayor porcentaje de descuento.
+    
+    Args:
+        juegos_bajaron_precio: Lista de juegos que bajaron de precio
+        fecha_actual: Fecha actual formateada como string
+        debug: Indica si está en modo debug
+        
+    Returns:
+        Mensaje formateado para enviar a Telegram
+    """
+    mensaje = [
+        "<b>🔥 TOP DESCUENTOS EN XBOX PC</b>",
+        "",
+        f"<i>Fecha: {fecha_actual}</i>",
+        ""
+    ]
+    if not juegos_bajaron_precio and not debug:
+        mensaje.append("<i>No se encontraron juegos con descuento en esta actualización.</i>")
+        return "\n".join(mensaje)
+
+    # Filtrar juegos con porcentaje de descuento válido
+    juegos_con_descuento = [j for j in juegos_bajaron_precio if j.get('precio_descuento_num') is not None]
+    if not juegos_con_descuento:
+        mensaje.append("<i>No se encontraron juegos con descuento porcentual.</i>")
+        return "\n".join(mensaje)
+
+    # Ordenar por mayor porcentaje de descuento
+    top_juegos = sorted(juegos_con_descuento, key=lambda j: j.get('precio_descuento_num', 0), reverse=True)[:10]
+
+    for i, juego in enumerate(top_juegos, 1):
+        titulo = juego.get('titulo', 'Sin título')
+        precio_actual = juego.get('precio_num')
+        descuento = juego.get('precio_descuento_num')
+        link = juego.get('link', '#')
+        precio_actual_fmt = _formatear_precio(precio_actual)
+        mensaje.extend([
+            f"{i}. <b>{titulo}</b>",
+            f"   🔥 Descuento: -{descuento:.0f}% | 💰 {precio_actual_fmt}",
+            f"   🔗 <a href=\"{link}\">Ver en la tienda</a>",
+            ""
+        ])
+    if len(juegos_con_descuento) > 10:
+        mensaje.append(f"<i>... y {len(juegos_con_descuento) - 10} juegos más con descuento.</i>")
+    mensaje.append("\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>")
+    return "\n".join(mensaje)
