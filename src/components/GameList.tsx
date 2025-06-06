@@ -5,10 +5,9 @@ import { Game } from '../types'; // Import Game type
 
 interface GameListProps {
   games: Game[];
-  onHideGame: (title: string) => void; // New prop
 }
 
-const GameList: React.FC<GameListProps> = ({ games, onHideGame }) => {
+const GameList: React.FC<GameListProps> = ({ games }) => {
     const [selectedGames, setSelectedGames] = useState<Game[]>([]);
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     
@@ -36,7 +35,6 @@ const GameList: React.FC<GameListProps> = ({ games, onHideGame }) => {
                         game={game} 
                         isSelected={selectedGames.some(g => g.id === game.id || g.link === game.link)}
                         onSelectToggle={handleSelectToggle}
-                        onHideGame={onHideGame} // Pass the prop down
                     />
                 ))}
             </ul>

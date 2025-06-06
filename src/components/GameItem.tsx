@@ -5,10 +5,9 @@ interface GameItemProps {
   game: Game;
   isSelected: boolean;
   onSelectToggle: (game: Game) => void;
-  onHideGame: (title: string) => void; // New prop
 }
 
-const GameItem: React.FC<GameItemProps> = ({ game, isSelected, onSelectToggle, onHideGame }) => {
+const GameItem: React.FC<GameItemProps> = ({ game, isSelected, onSelectToggle }) => {
     const isValidImageUrl = game.imagen_url && game.imagen_url !== "Imagen no encontrada" && game.imagen_url.startsWith('http');
 
     let discountColorClass = '';
@@ -47,10 +46,6 @@ const GameItem: React.FC<GameItemProps> = ({ game, isSelected, onSelectToggle, o
                     aria-label={`Seleccionar ${game.titulo}`}
                 />
             </div>
-            {/* Add the new button here */}
-            <button onClick={() => onHideGame(game.titulo)} className="hide-game-btn">
-                Ocultar Juego
-            </button>
             
             {isValidImageUrl && game.imagen_url ? ( // Added check for game.imagen_url to satisfy TS strict null checks potentially
                 <img 
