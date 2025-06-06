@@ -1,32 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import GameList from './components/GameList';
 import './style.css';
+import { Game, GameData } from './types'; // Import Game and GameData types
 
-function App() {
-    const [allGames, setAllGames] = useState([]);
-    const [displayedGames, setDisplayedGames] = useState([]);
-    const [visibleCount, setVisibleCount] = useState(50);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+// Define a type for the keys of precioCambioMapped
+type PrecioCambioKey = 'increased' | 'decreased' | 'unchanged' | 'null';
+
+function App() { // Removed : JSX.Element return type
+    const [allGames, setAllGames] = useState<Game[]>([]);
+    const [displayedGames, setDisplayedGames] = useState<Game[]>([]);
+    const [visibleCount, setVisibleCount] = useState<number>(50);
+    const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
     
-    // Estados de Filtro Existentes
-    const [sortType, setSortType] = useState('default');
-    const [filterMinPrice, setFilterMinPrice] = useState('');
-    const [filterMaxPrice, setFilterMaxPrice] = useState('');
-    const [hideNoPrice, setHideNoPrice] = useState(false); // Nuevo estado para ocultar juegos sin precio
+    const [sortType, setSortType] = useState<string>('default');
+    const [filterMinPrice, setFilterMinPrice] = useState<string>('');
+    const [filterMaxPrice, setFilterMaxPrice] = useState<string>('');
+    const [hideNoPrice, setHideNoPrice] = useState<boolean>(false);
 
-    // Nuevos Estados de Filtro
-    const [filterDiscountPercent, setFilterDiscountPercent] = useState('0'); // String para el input range, se parseará a número
-    const [filterTitle, setFilterTitle] = useState('');
-    const [filterPriceChange, setFilterPriceChange] = useState('all'); // Nuevo estado para filtrar por cambio de precio
+    const [filterDiscountPercent, setFilterDiscountPercent] = useState<string>('0');
+    const [filterTitle, setFilterTitle] = useState<string>('');
+    const [filterPriceChange, setFilterPriceChange] = useState<string>('all');
 
-    // Estado para el botón Volver Arriba
-    const [showBackToTop, setShowBackToTop] = useState(false);
+    const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
     
-    // Estado para la fecha de actualización
-    const [fechaActualizacion, setFechaActualizacion] = useState(null);
+    const [fechaActualizacion, setFechaActualizacion] = useState<string | null>(null);
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsLoading(true);
@@ -38,21 +38,20 @@ function App() {
                 if (!response.ok) {
                     throw new Error(`Error al cargar el archivo JSON: ${response.statusText}`);
                 }
-                return response.json();
+                return response.json() as Promise<GameData>; 
             })
             .then(data => {
-                // Verificar la estructura de los datos (compatibilidad con nuevos y viejos formatos)
-                const juegosData = data.juegos ? data.juegos : data;
-                const fechaCreacion = data.fecha_creacion || null;
+                const juegosData: Game[] = Array.isArray(data) ? data : data.juegos || [];
+                const fechaCreacion: string | null = Array.isArray(data) ? null : data.fecha_creacion || null;
                 
                 if (fechaCreacion) {
                     console.log(`Datos actualizados el: ${fechaCreacion}`);
                     setFechaActualizacion(fechaCreacion);
                 }
                 
-                const gamesWithId = juegosData.map((game, index) => ({
+                const gamesWithId: Game[] = juegosData.map((game: Game, index: number) => ({
                     ...game,
-                    id: game.link || `game-${index}`
+                    id: game.link || `game-${index}` 
                 }));
                 setAllGames(gamesWithId);
                 setIsLoading(false);
@@ -70,77 +69,60 @@ function App() {
              return;
         }
 
-        let workingGames = [...allGames];
+        let workingGames: Game[] = [...allGames];
 
-        // Parsear valores de filtro
         const minPrice = filterMinPrice === '' ? NaN : parseFloat(filterMinPrice);
         const maxPrice = filterMaxPrice === '' ? NaN : parseFloat(filterMaxPrice);
-        const discountPercent = parseInt(filterDiscountPercent, 10); // Convertir a número
+        const discountPercent = parseInt(filterDiscountPercent, 10);
         const titleQuery = filterTitle.toLowerCase().trim();
 
-        // Aplicar filtros
         workingGames = workingGames.filter(game => {
-            // Filtro por Título
             if (titleQuery && !game.titulo.toLowerCase().includes(titleQuery)) {
                 return false;
             }
 
-            // Filtro por Porcentaje de Descuento
-            // Mostrar si el descuento del juego es >= al filtro, o si el filtro es 0 (sin filtro de descuento)
-            // o si el juego no tiene descuento (precio_descuento_num es null) y el filtro es 0.
             if (discountPercent > 0) {
-                if (game.precio_descuento_num === null || game.precio_descuento_num < discountPercent) {
+                if (game.precio_descuento_num === null || game.precio_descuento_num === undefined || game.precio_descuento_num < discountPercent) {
                     return false;
                 }
             }
             
-            // Filtro por Cambio de Precio
             if (filterPriceChange !== 'all') {
-                const precioCambioMapped = {
+                const precioCambioMapped: Record<PrecioCambioKey, Game['precio_cambio']> = {
                     'increased': 'subió',
                     'decreased': 'bajó',
                     'unchanged': 'sigue igual',
-                    'null': null
+                    'null': null 
                 };
                 
                 if (filterPriceChange === 'null') {
-                    // Para filtrar juegos sin histórico (precio_cambio es null)
-                    if (game.precio_cambio !== null) {
-                        return false;
-                    }
+                    if (game.precio_cambio !== null) return false;
                 } else {
-                    // Para otros filtros de cambio de precio
-                    if (!game.precio_cambio || (game.precio_cambio !== filterPriceChange && 
-                        game.precio_cambio !== precioCambioMapped[filterPriceChange])) {
+                    if (!game.precio_cambio || 
+                        (game.precio_cambio !== filterPriceChange && 
+                         game.precio_cambio !== precioCambioMapped[filterPriceChange as PrecioCambioKey])) {
                         return false;
                     }
                 }
             }
 
-            // Filtro por Precio
             if (typeof game.precio_num === 'number' && !isNaN(game.precio_num) && game.precio_num > 0) {
-                // Juegos con precio (mayor que cero)
                 let passesMin = true;
                 let passesMax = true;
                 if (!isNaN(minPrice)) passesMin = game.precio_num >= minPrice;
                 if (!isNaN(maxPrice)) passesMax = game.precio_num <= maxPrice;
                 if (!(passesMin && passesMax)) return false;
             } else if (typeof game.precio_num === 'number' && !isNaN(game.precio_num) && game.precio_num === 0) {
-                // Juegos gratuitos (precio igual a cero)
-                if (hideNoPrice) return false; // Ocultar si el checkbox está marcado
-                // No mostrar si hay filtros de precio numérico activos
+                if (hideNoPrice) return false;
                 if (!isNaN(minPrice) || !isNaN(maxPrice)) return false;
             } else {
-                // Juegos sin precio numérico (null, undefined, NaN, o cualquier otro valor no numérico)
                 if (hideNoPrice) return false;
-                // No mostrar si hay filtros de precio numérico activos
                 if (!isNaN(minPrice) || !isNaN(maxPrice)) return false;
             }
             
-            return true; // Pasa todos los filtros aplicables
+            return true;
         });
 
-        // Aplicar ordenación
         if (sortType !== 'default') {
             workingGames.sort((a, b) => {
                 const priceA = a.precio_num === null ? (sortType === 'asc' ? Infinity : -Infinity) : a.precio_num;
@@ -149,7 +131,6 @@ function App() {
             });
         }
         setDisplayedGames(workingGames);
-        // Resetear el contador de elementos visibles al cambiar los filtros
         setVisibleCount(50);
     }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice, filterPriceChange]);
 
@@ -157,59 +138,40 @@ function App() {
         applyFiltersAndSort();
     }, [applyFiltersAndSort]);
 
-    // Efecto para la carga de más elementos al hacer scroll
     useEffect(() => {
         const handleScroll = () => {
-            // Si ya estamos cargando más elementos o no hay más para cargar, no hacemos nada
             if (isLoadingMore || visibleCount >= displayedGames.length) return;
-            
-            // Calcular si estamos cerca del final de la página (200px del final)
             const scrollPosition = window.innerHeight + window.scrollY;
             const threshold = document.body.offsetHeight - 200;
-            
             if (scrollPosition >= threshold) {
                 setIsLoadingMore(true);
-                // Simular una breve carga para evitar múltiples cargas rápidas
                 setTimeout(() => {
                     setVisibleCount(prevCount => Math.min(prevCount + 50, displayedGames.length));
                     setIsLoadingMore(false);
                 }, 300);
             }
         };
-
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, [displayedGames.length, isLoadingMore, visibleCount]);
 
-    // Efecto para controlar la visibilidad del botón "Volver Arriba"
     useEffect(() => {
         const handleScroll = () => {
-            // Mostrar el botón cuando el usuario ha desplazado más de 300px
             if (window.scrollY > 300) {
                 setShowBackToTop(true);
             } else {
                 setShowBackToTop(false);
             }
         };
-
-        // Añadir el event listener para el scroll
         window.addEventListener('scroll', handleScroll);
-        
-        // Limpiar el event listener cuando el componente se desmonte
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Función para volver arriba
     const scrollToTop = () => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth' // Para un desplazamiento suave
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleSortChange = (e) => setSortType(e.target.value);
+    const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSortType(e.target.value);
     
     const handleClearFilters = () => {
         setFilterMinPrice('');
