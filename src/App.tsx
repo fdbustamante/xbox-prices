@@ -17,6 +17,9 @@ function App() { // Removed : JSX.Element return type
     const [filterMaxPrice, setFilterMaxPrice] = useState<string>('');
     const [hideNoPrice, setHideNoPrice] = useState<boolean>(false);
 
+    const [hiddenGameTitles, setHiddenGameTitles] = useState<string[]>([]);
+    const [showHidden, setShowHidden] = useState<boolean>(false);
+
     const [filterDiscountPercent, setFilterDiscountPercent] = useState<string>('0');
     const [filterTitle, setFilterTitle] = useState<string>('');
     const [filterPriceChange, setFilterPriceChange] = useState<string>('all');
@@ -27,6 +30,34 @@ function App() { // Removed : JSX.Element return type
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const storedHiddenGames = localStorage.getItem('hiddenGameTitles');
+        if (storedHiddenGames) {
+            try {
+                const parsedHiddenGames = JSON.parse(storedHiddenGames);
+                if (Array.isArray(parsedHiddenGames)) {
+                    setHiddenGameTitles(parsedHiddenGames);
+                } else {
+                    console.warn("Stored hiddenGameTitles is not an array:", parsedHiddenGames);
+                    setHiddenGameTitles([]); // Fallback to empty array
+                }
+            } catch (e) {
+                console.error("Failed to parse hiddenGameTitles from localStorage:", e);
+                setHiddenGameTitles([]); // Fallback to empty array on error
+            }
+        }
+    }, []); // Runs once on mount
+
+    const toggleHideGame = (gameTitle: string) => {
+        setHiddenGameTitles(prevHidden => {
+            const newHiddenGames = prevHidden.includes(gameTitle)
+                ? prevHidden.filter(title => title !== gameTitle)
+                : [...prevHidden, gameTitle];
+            localStorage.setItem('hiddenGameTitles', JSON.stringify(newHiddenGames));
+            return newHiddenGames;
+        });
+    };
 
     useEffect(() => {
         setIsLoading(true);
@@ -70,6 +101,10 @@ function App() { // Removed : JSX.Element return type
         }
 
         let workingGames: Game[] = [...allGames];
+
+        if (!showHidden) {
+            workingGames = workingGames.filter(game => !hiddenGameTitles.includes(game.titulo));
+        }
 
         const minPrice = filterMinPrice === '' ? NaN : parseFloat(filterMinPrice);
         const maxPrice = filterMaxPrice === '' ? NaN : parseFloat(filterMaxPrice);
@@ -132,7 +167,7 @@ function App() { // Removed : JSX.Element return type
         }
         setDisplayedGames(workingGames);
         setVisibleCount(50);
-    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice, filterPriceChange]);
+    }, [allGames, isLoading, sortType, filterMinPrice, filterMaxPrice, filterDiscountPercent, filterTitle, hideNoPrice, filterPriceChange, hiddenGameTitles, showHidden]);
 
     useEffect(() => {
         applyFiltersAndSort();
@@ -286,6 +321,13 @@ function App() { // Removed : JSX.Element return type
                 <div className="clear-filters-wrapper">
                      <button id="clear-filter-button" onClick={handleClearFilters}>Limpiar Filtros</button>
                 </div>
+
+                {/* Botón para mostrar/ocultar juegos ocultos */}
+                <div className="show-hidden-toggle-wrapper">
+                    <button onClick={() => setShowHidden(!showHidden)} className="toggle-hidden-btn">
+                        {showHidden ? "Ocultar Juegos Ocultos" : "Mostrar Juegos Ocultos"} ({hiddenGameTitles.length})
+                    </button>
+                </div>
             </div>
             
             {/* Contador de juegos */}
@@ -293,7 +335,10 @@ function App() { // Removed : JSX.Element return type
                 Mostrando {Math.min(visibleCount, displayedGames.length)} de {displayedGames.length} juegos
             </div>
             
-            <GameList games={displayedGames.slice(0, visibleCount)} />
+            <GameList
+                games={displayedGames.slice(0, visibleCount)}
+                onHideGame={toggleHideGame}
+            />
             
             {/* Carga de más juegos */}
             {isLoadingMore && (
