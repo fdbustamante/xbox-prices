@@ -85,6 +85,21 @@ async def enviar_notificaciones(juegos: List[Dict[str, Any]], fecha_actual: str)
     else:
         logger.info("No se encontraron juegos con bajada de precio. No se envía notificación.")
     
+    # --- Asegurar que todos los juegos bajaron de precio tengan el campo 'precio_descuento_num' calculado ---
+    for juego in juegos_bajaron_precio:
+        if juego.get('precio_descuento_num') is None:
+            precio_anterior = juego.get('precio_anterior_num')
+            precio_actual = juego.get('precio_num')
+            if precio_anterior and precio_actual and precio_anterior > 0:
+                descuento = (1 - (precio_actual / precio_anterior)) * 100
+                juego['precio_descuento_num'] = round(descuento, 1)
+            else:
+                juego['precio_descuento_num'] = None
+    # --- Fin cálculo descuento ---
+    
+    # Ordenar los juegos bajaron de precio por mayor descuento antes de enviar la notificación general
+    juegos_bajaron_precio.sort(key=lambda j: j.get('precio_descuento_num') or 0, reverse=True)
+    
     # Enviar notificación de top descuentos
     if juegos_bajaron_precio or DEBUG:
         try:
