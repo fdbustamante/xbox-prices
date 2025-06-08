@@ -7,13 +7,12 @@ import sys
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 
-from scrap.config import OUTPUT_FILENAME, DEBUG, logger
+from scrap.config import OUTPUT_FILENAME, logger
 from scrap.data_manager import (
     cargar_datos_previos, guardar_datos, filtrar_juegos_por_precio, 
     filtrar_juegos_nuevos, generar_mensaje_telegram, generar_mensaje_telegram_nuevos
 )
 from scrap.scraper import scrape_xbox_games
-from scrap.telegram_client import enviar_mensaje_telegram
 
 async def ejecutar_scraping() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
@@ -49,132 +48,29 @@ async def guardar_resultados(juegos: List[Dict[str, Any]]) -> Optional[str]:
         logger.error(f"Error al guardar los resultados: {e}")
         return None
 
-async def enviar_notificaciones(juegos: List[Dict[str, Any]], fecha_actual: str) -> bool:
-    """
-    Filtra los juegos que bajaron de precio y juegos nuevos, y envía las notificaciones.
-    
-    Args:
-        juegos: Lista de juegos encontrados
-        fecha_actual: Fecha actual formateada
-        
-    Returns:
-        True si se enviaron las notificaciones correctamente, False en caso contrario
-    """
-    # Filtrar juegos que bajaron de precio
-    juegos_bajaron_precio = filtrar_juegos_por_precio(juegos, "decreased")
-    
-    # Filtrar juegos nuevos (precio_cambio = None)
-    juegos_nuevos = filtrar_juegos_nuevos(juegos)
-    
-    notificacion_exitosa = True
-    
-    # Enviar notificación de juegos con bajada de precio
-    if juegos_bajaron_precio or DEBUG:
-        try:
-            # Construir el mensaje
-            mensaje = generar_mensaje_telegram(juegos_bajaron_precio, fecha_actual, DEBUG)
-            
-            # Enviar notificación
-            logger.info("Enviando notificación de bajadas de precio a Telegram...")
-            resultado = await enviar_mensaje_telegram(mensaje)
-            if not resultado:
-                notificacion_exitosa = False
-        except Exception as e:
-            logger.error(f"Error al enviar notificación de bajadas de precio: {e}")
-            notificacion_exitosa = False
-    else:
-        logger.info("No se encontraron juegos con bajada de precio. No se envía notificación.")
-    
-    # --- Asegurar que todos los juegos bajaron de precio tengan el campo 'precio_descuento_num' calculado ---
-    for juego in juegos_bajaron_precio:
-        if juego.get('precio_descuento_num') is None:
-            precio_anterior = juego.get('precio_anterior_num')
-            precio_actual = juego.get('precio_num')
-            if precio_anterior and precio_actual and precio_anterior > 0:
-                descuento = (1 - (precio_actual / precio_anterior)) * 100
-                juego['precio_descuento_num'] = round(descuento, 1)
-            else:
-                juego['precio_descuento_num'] = None
-    # --- Fin cálculo descuento ---
-    
-    # Ordenar los juegos bajaron de precio por mayor descuento antes de enviar la notificación general
-    juegos_bajaron_precio.sort(key=lambda j: j.get('precio_descuento_num') or 0, reverse=True)
-    
-    # Enviar notificación de top descuentos
-    if juegos_bajaron_precio or DEBUG:
-        try:
-            from scrap.data_manager import generar_mensaje_telegram_top_descuentos
-            mensaje = generar_mensaje_telegram_top_descuentos(juegos_bajaron_precio, fecha_actual, DEBUG)
-            logger.info("Enviando notificación de top descuentos a Telegram...")
-            resultado = await enviar_mensaje_telegram(mensaje)
-            if not resultado:
-                notificacion_exitosa = False
-        except Exception as e:
-            logger.error(f"Error al enviar notificación de top descuentos: {e}")
-            notificacion_exitosa = False
-    
-    # Enviar notificación de juegos nuevos
-    if juegos_nuevos or DEBUG:
-        try:
-            # Construir el mensaje
-            mensaje = generar_mensaje_telegram_nuevos(juegos_nuevos, fecha_actual, DEBUG)
-            
-            # Enviar notificación
-            logger.info("Enviando notificación de juegos nuevos a Telegram...")
-            resultado = await enviar_mensaje_telegram(mensaje)
-            if not resultado:
-                notificacion_exitosa = False
-        except Exception as e:
-            logger.error(f"Error al enviar notificación de juegos nuevos: {e}")
-            notificacion_exitosa = False
-    else:
-        logger.info("No se encontraron juegos nuevos. No se envía notificación.")
-    
-    return notificacion_exitosa
-
-async def main() -> int:
-    """
-    Función principal del programa.
-    
-    Returns:
-        Código de salida (0 para éxito, otro valor para error)
-    """
-    start_time = time.time()
-    logger.info("=" * 60)
-    logger.info("Iniciando scraper de Xbox PC Games...")
-    
-    try:
-        # Ejecutar el scraping
-        juegos, _ = await ejecutar_scraping()
-        
-        if not juegos:
-            logger.error("No se encontraron juegos o ocurrió un error durante el scraping.")
-            return 1
-            
-        logger.info(f"Se encontraron {len(juegos)} juegos.")
-        
-        # Guardar los resultados
-        fecha_actual = await guardar_resultados(juegos)
-        if not fecha_actual:
-            logger.error("No se pudieron guardar los resultados.")
-            return 1
-            
-        # Enviar notificaciones
-        envio_exitoso = await enviar_notificaciones(juegos, fecha_actual)
-        
-        elapsed_time = time.time() - start_time
-        logger.info(f"Proceso completado en {elapsed_time:.2f} segundos.")
-        logger.info("=" * 60)
-        
-        return 0 if envio_exitoso else 1
-        
-    except KeyboardInterrupt:
-        logger.info("Proceso interrumpido por el usuario.")
-        return 130
-    except Exception as e:
-        logger.error(f"Error no controlado en el proceso: {e}", exc_info=True)
-        return 1
-
 if __name__ == "__main__":
-    exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+    async def main_scraper():
+        start_time = time.time()
+        logger.info("=" * 60)
+        logger.info("Iniciando scraper de Xbox PC Games...")
+        try:
+            juegos, _ = await ejecutar_scraping()
+            if not juegos:
+                logger.error("No se encontraron juegos o ocurrió un error durante el scraping.")
+                sys.exit(1)
+            logger.info(f"Se encontraron {len(juegos)} juegos.")
+            fecha_actual = await guardar_resultados(juegos)
+            if not fecha_actual:
+                logger.error("No se pudieron guardar los resultados.")
+                sys.exit(1)
+            elapsed_time = time.time() - start_time
+            logger.info(f"Scraping completado en {elapsed_time:.2f} segundos.")
+            logger.info("=" * 60)
+            sys.exit(0)
+        except KeyboardInterrupt:
+            logger.info("Proceso interrumpido por el usuario.")
+            sys.exit(130)
+        except Exception as e:
+            logger.error(f"Error no controlado en el proceso: {e}", exc_info=True)
+            sys.exit(1)
+    asyncio.run(main_scraper())

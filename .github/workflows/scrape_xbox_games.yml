@@ -30,12 +30,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run scraper
-        run: python run_scraper.py
+      - name: Obtener los precios actualizados
+        run: python scrap/main.py
+
+      - name: Enviar notificaciones a Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_DEBUG: ${{ secrets.TELEGRAM_DEBUG || 'False' }}
+        run: python scrap/enviar_mails.py
 
       - name: Commit and push JSON if changed
         run: |
@@ -109,4 +112,4 @@ jobs:
           # Opciones adicionales (opcionales):
           # user_name: 'GitHub Actions Bot'
           # user_email: 'github-actions[bot]@users.noreply.github.com'
-          # cname: tu.dominio.personalizado.com 
+          # cname: tu.dominio.personalizado.com

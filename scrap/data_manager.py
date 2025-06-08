@@ -295,3 +295,16 @@ def generar_mensaje_telegram_top_descuentos(juegos_bajaron_precio: List[GameDict
         mensaje.append(f"<i>... y {len(juegos_con_descuento) - 10} juegos más con descuento.</i>")
     mensaje.append("\n🌐 <a href=\"https://fdbustamante.github.io/xbox-prices/\">Ver todos los juegos</a>")
     return "\n".join(mensaje)
+
+def filtrar_juegos_por_mayor_descuento(juegos: List[GameDict]) -> List[GameDict]:
+    """
+    Filtra y ordena los juegos con descuento válido (>0) de mayor a menor descuento.
+    
+    Args:
+        juegos: Lista de juegos a filtrar
+        
+    Returns:
+        Lista de juegos con descuento, ordenados de mayor a menor descuento
+    """
+    juegos_con_descuento = [j for j in juegos if j.get('precio_descuento_num') is not None and j.get('precio_descuento_num') > 0]
+    return sorted(juegos_con_descuento, key=lambda j: j.get('precio_descuento_num', 0), reverse=True)
