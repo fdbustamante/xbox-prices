@@ -3,16 +3,56 @@ Cliente para enviar notificaciones por Telegram.
 Proporciona funciones para enviar mensajes y verificar la configuración.
 """
 import asyncio
-from typing import Optional, Dict, Any, Union, List
+from typing import Dict, Any, List
 from telegram import Bot
 from telegram.error import TelegramError, TimedOut, NetworkError
 from telegram.constants import ParseMode
 
 from scrap.config import BOT_TOKEN, CHAT_ID, logger, MAX_RETRY_ATTEMPTS
 
+def _dividir_mensaje_largo(mensaje: str, limite: int = 4000) -> List[str]:
+    """
+    Divide un mensaje largo en fragmentos más pequeños para cumplir con las limitaciones de Telegram.
+    
+    Args:
+        mensaje: El mensaje a dividir
+        limite: Límite de caracteres por mensaje (4000 por defecto)
+        
+    Returns:
+        Lista de fragmentos del mensaje
+    """
+    # Si el mensaje es lo suficientemente corto, devolverlo tal cual
+    if len(mensaje) <= limite:
+        return [mensaje]
+    
+    # Dividir el mensaje en fragmentos
+    fragmentos = []
+    lineas = mensaje.split('\n')
+    fragmento_actual = ""
+    
+    for linea in lineas:
+        # Si agregar esta línea excede el límite, comenzar un nuevo fragmento
+        if len(fragmento_actual) + len(linea) + 1 > limite:
+            if fragmento_actual:
+                fragmentos.append(fragmento_actual)
+            fragmento_actual = linea
+        else:
+            fragmento_actual = f"{fragmento_actual}\n{linea}" if fragmento_actual else linea
+    
+    # Agregar el último fragmento si existe
+    if fragmento_actual:
+        fragmentos.append(fragmento_actual)
+    
+    # Agregar numeración si hay múltiples fragmentos
+    if len(fragmentos) > 1:
+        for i in range(len(fragmentos)):
+            fragmentos[i] = f"[Parte {i+1}/{len(fragmentos)}]\n\n" + fragmentos[i]
+    
+    return fragmentos
+
 async def enviar_mensaje_telegram(
-    mensaje: str, 
-    parse_mode: str = "HTML", 
+    mensaje: str,
+    parse_mode: str = "HTML",
     disable_web_page_preview: bool = True,
     retry_attempts: int = 2
 ) -> bool:
@@ -32,7 +72,7 @@ async def enviar_mensaje_telegram(
     if not BOT_TOKEN or not CHAT_ID:
         logger.warning("No se puede enviar mensaje a Telegram: token o chat_id no configurados")
         return False
-    
+
     # Mapear el modo de formato a las constantes de telegram
     parse_mode_map = {
         "HTML": ParseMode.HTML,
@@ -46,29 +86,24 @@ async def enviar_mensaje_telegram(
     
     # Dividir mensajes largos si es necesario
     fragmentos = _dividir_mensaje_largo(mensaje)
-    
+    bot = Bot(token=BOT_TOKEN)  # Crear el bot una sola vez
+
     # Enviar cada fragmento
     for i, fragmento in enumerate(fragmentos):
-        # Contador de intentos para cada fragmento
-        attempt = 0
-        
-        while attempt <= retry_attempts:
+        for attempt in range(retry_attempts + 1):
             try:
-                bot = Bot(token=BOT_TOKEN)
                 await bot.send_message(
-                    chat_id=CHAT_ID, 
-                    text=fragmento, 
+                    chat_id=CHAT_ID,
+                    text=fragmento,
                     parse_mode=telegram_parse_mode,
                     disable_web_page_preview=disable_web_page_preview
                 )
                 logger.info(f"Mensaje {i+1}/{len(fragmentos)} enviado a Telegram correctamente")
                 break  # Éxito, salir del bucle de reintento
             except (TimedOut, NetworkError) as e:
-                attempt += 1
-                wait_time = 2 ** attempt  # Espera exponencial
-                
-                if attempt <= retry_attempts:
-                    logger.warning(f"Error de red al enviar fragmento {i+1}. Reintento {attempt}/{retry_attempts} en {wait_time}s...")
+                wait_time = 2 ** (attempt + 1)
+                if attempt < retry_attempts:
+                    logger.warning(f"Error de red al enviar fragmento {i+1}. Reintento {attempt+1}/{retry_attempts} en {wait_time}s...")
                     await asyncio.sleep(wait_time)
                 else:
                     logger.error(f"Error de red persistente al enviar fragmento {i+1}: {e}")
@@ -79,7 +114,6 @@ async def enviar_mensaje_telegram(
             except Exception as e:
                 logger.error(f"Error inesperado al enviar fragmento {i+1} a Telegram: {e}", exc_info=True)
                 return False
-    
     # Si llegamos aquí, todos los fragmentos se enviaron correctamente
     return True
 
@@ -128,46 +162,3 @@ async def verificar_configuracion_telegram() -> Dict[str, Any]:
         return {"success": False, "error": f"Error de Telegram: {e}"}
     except Exception as e:
         return {"success": False, "error": f"Error inesperado: {e}"}
-
-def _dividir_mensaje_largo(mensaje: str, limite: int = 4000) -> List[str]:
-    """
-    Divide un mensaje largo en fragmentos más pequeños para cumplir con las limitaciones de Telegram.
-    
-    Args:
-        mensaje: El mensaje a dividir
-        limite: Límite de caracteres por mensaje (4000 por defecto)
-        
-    Returns:
-        Lista de fragmentos del mensaje
-    """
-    # Si el mensaje es lo suficientemente corto, devolverlo tal cual
-    if len(mensaje) <= limite:
-        return [mensaje]
-    
-    # Dividir el mensaje en fragmentos
-    fragmentos = []
-    lineas = mensaje.split('\n')
-    fragmento_actual = ""
-    
-    for linea in lineas:
-        # Si agregar esta línea excede el límite, comenzar un nuevo fragmento
-        if len(fragmento_actual) + len(linea) + 1 > limite:
-            if fragmento_actual:
-                fragmentos.append(fragmento_actual)
-            fragmento_actual = linea
-        else:
-            if fragmento_actual:
-                fragmento_actual += '\n' + linea
-            else:
-                fragmento_actual = linea
-    
-    # Agregar el último fragmento si existe
-    if fragmento_actual:
-        fragmentos.append(fragmento_actual)
-    
-    # Agregar numeración si hay múltiples fragmentos
-    if len(fragmentos) > 1:
-        for i in range(len(fragmentos)):
-            fragmentos[i] = f"[Parte {i+1}/{len(fragmentos)}]\n\n" + fragmentos[i]
-    
-    return fragmentos

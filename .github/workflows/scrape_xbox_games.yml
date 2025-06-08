@@ -31,14 +31,14 @@ jobs:
           pip install -r requirements.txt
 
       - name: Obtener los precios actualizados
-        run: python scrap/main.py
+        run: python -m scrap.main
 
       - name: Enviar notificaciones a Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_DEBUG: ${{ secrets.TELEGRAM_DEBUG || 'False' }}
-        run: python scrap/enviar_mails.py
+        run: python -m scrap.enviar_mails
 
       - name: Commit and push JSON if changed
         run: |
