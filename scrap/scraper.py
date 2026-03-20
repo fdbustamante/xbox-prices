@@ -34,15 +34,18 @@ from scrap.config import logger, MAX_JUEGOS, MAX_RETRY_ATTEMPTS, REQUEST_TIMEOUT
 # Constantes de Configuración
 # =====================
 URL_XBOX_TIENDA = "https://www.xbox.com/es-AR/games/all-games/pc?PlayWith=PC&xr=shellnav&orderby=Title+Asc"
-SELECTOR_CARD_WRAPPER = "div.ProductCard-module__cardWrapper___6Ls86"
-SELECTOR_TITULO = "span.ProductCard-module__title___nHGIp"
-SELECTOR_ENLACE = "a.commonStyles-module__basicButton___go-bX"
-SELECTOR_IMAGEN = "img.ProductCard-module__boxArt___-2vQY"
-SELECTOR_PRECIO_CONTAINER = "div.ProductCard-module__priceGroup___bACzG"
-SELECTOR_PRECIO_ORIGINAL = "span.Price-module__originalPrice___XNCxs"
-SELECTOR_PRECIO_ACTUAL = r"span.ProductCard-module__price___cs1xr, span.Price-module__listedDiscountPrice___A-\+d5"
-SELECTOR_DESCUENTO_TAG = "div.ProductCard-module__discountTag___OjGFy"
-SELECTOR_GRID_CONTAINER = "ol.SearchProductGrid-module__container___jew-i"
+SELECTOR_CARD_WRAPPER = 'div[class*="ProductCard-module__cardWrapper"]'
+SELECTOR_TITULO = 'span[class*="ProductCard-module__title"]'
+SELECTOR_ENLACE = 'a[class*="commonStyles-module__basicButton"]'
+SELECTOR_IMAGEN = 'img[class*="ProductCard-module__boxArt"]'
+SELECTOR_PRECIO_CONTAINER = 'div[class*="ProductCard-module__priceGroup"]'
+SELECTOR_PRECIO_ORIGINAL = 'span[class*="Price-module__originalPrice"]'
+SELECTOR_PRECIO_ACTUAL = (
+    'span[class*="ProductCard-module__price"], '
+    'span[class*="Price-module__listedDiscountPrice"]'
+)
+SELECTOR_DESCUENTO_TAG = 'div[class*="ProductCard-module__discountTag"]'
+SELECTOR_GRID_CONTAINER = 'ol[class*="SearchProductGrid-module__container"]'
 XPATH_BOTON_CARGAR_MAS = "//button[.//div[contains(text(),'Cargar más')]]"
 XPATH_BOTON_COOKIES = "//button[@id='onetrust-accept-btn-handler']"
 MAX_FALLOS_CONSECUTIVOS = 3
