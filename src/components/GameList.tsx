@@ -5,9 +5,10 @@ import { Game } from '../types'; // Import Game type
 
 interface GameListProps {
   games: Game[];
+  onHideSelectedGames: (games: Game[]) => void; // New prop
 }
 
-const GameList: React.FC<GameListProps> = ({ games }) => {
+const GameList: React.FC<GameListProps> = ({ games, onHideSelectedGames }) => {
     const [selectedGames, setSelectedGames] = useState<Game[]>([]);
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     
@@ -20,6 +21,11 @@ const GameList: React.FC<GameListProps> = ({ games }) => {
                 return [...prevSelectedGames, game];
             }
         });
+    };
+
+    const handleHideSelectedClick = () => {
+        onHideSelectedGames(selectedGames);
+        setSelectedGames([]); // Clear selection after hiding
     };
 
     if (!games || games.length === 0) {
@@ -35,6 +41,7 @@ const GameList: React.FC<GameListProps> = ({ games }) => {
                         game={game} 
                         isSelected={selectedGames.some(g => g.id === game.id || g.link === game.link)}
                         onSelectToggle={handleSelectToggle}
+                        // onHideGame prop removed from GameItem
                     />
                 ))}
             </ul>
@@ -47,6 +54,14 @@ const GameList: React.FC<GameListProps> = ({ games }) => {
                         title="Compartir juegos seleccionados"
                     >
                         Compartir ({selectedGames.length})
+                    </button>
+                    {/* New Button */}
+                    <button
+                        className="hide-selected-btn"
+                        onClick={handleHideSelectedClick}
+                        title="Ocultar juegos seleccionados"
+                    >
+                        Ocultar Seleccionados ({selectedGames.length})
                     </button>
                 </div>
             )}
